@@ -356,10 +356,10 @@
                                 title="Attach Media">
                                 <span class="material-symbols-outlined text-[20px]">add_a_photo</span>
                             </button>
-                            <button onclick="openModal('voice-modal')"
+                            <button id="mic-btn" onclick="toggleVoiceInput()"
                                 class="w-11 h-11 rounded-full bg-surface-glass dark:bg-slate-800/50 backdrop-blur-lg text-on-surface-variant dark:text-slate-300 flex items-center justify-center shadow-sm hover:bg-white dark:hover:bg-slate-700 hover:text-primary dark:hover:text-primary active:scale-90 transition-all border border-white/80 dark:border-white/10"
                                 title="Voice Dictation">
-                                <span
+                                <span id="mic-icon"
                                     class="material-symbols-outlined text-[20px] text-primary dark:text-primary">mic</span>
                             </button>
                         </div>
@@ -888,39 +888,78 @@
             document.getElementById(viewId).classList.remove('hidden');
         }
 
-        // Fake Transcription Logic
-        let transcriptTimer;
-        let currentWordIndex = 0;
-        const mockTextStr = "At approximately 10:30 AM, a severe collision occurred between a black sedan and a motorcycle at the main intersection. The suspect immediately fled the scene.";
-        const mockWords = mockTextStr.split(' ');
+        // ── Voice Input (Web Speech API) ──────────────────────────────────────
+        let recognition = null;
+        let isListening = false;
 
-        function startTranscription() {
-            const transcriptEl = document.getElementById('live-transcript');
-            const textAreaEl = document.getElementById('main-textarea');
-            transcriptEl.innerText = "Listening...";
-            currentWordIndex = 0;
+        function toggleVoiceInput() {
+            if (isListening) {
+                stopVoiceInput();
+            } else {
+                startVoiceInput();
+            }
+        }
 
-            if (!textAreaEl.value.includes(mockTextStr)) textAreaEl.value = "";
-            clearInterval(transcriptTimer);
+        function startVoiceInput() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert('Speech recognition is not supported in this browser. Please use Chrome or Edge.');
+                return;
+            }
 
-            setTimeout(() => {
-                transcriptEl.innerText = "";
-                transcriptTimer = setInterval(() => {
-                    if (currentWordIndex < mockWords.length) {
-                        transcriptEl.innerText += mockWords[currentWordIndex] + " ";
-                        textAreaEl.value += mockWords[currentWordIndex] + " ";
-                        currentWordIndex++;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'en-IN'; // supports en-IN and hi-IN
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            const textarea = document.getElementById('main-textarea');
+            const micIcon = document.getElementById('mic-icon');
+            let finalTranscript = textarea.value;
+
+            recognition.onstart = () => {
+                isListening = true;
+                if (micIcon) {
+                    micIcon.innerText = 'mic_off';
+                    micIcon.style.color = '#d32f2f';
+                }
+            };
+
+            recognition.onresult = (event) => {
+                let interim = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript + ' ';
                     } else {
-                        clearInterval(transcriptTimer);
-                        setTimeout(() => closeModal('voice-modal'), 1200);
+                        interim += event.results[i][0].transcript;
                     }
-                }, 280);
-            }, 1500);
+                }
+                textarea.value = finalTranscript + interim;
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                stopVoiceInput();
+            };
+
+            recognition.onend = () => stopVoiceInput();
+            recognition.start();
         }
 
-        function stopTranscription() {
-            clearInterval(transcriptTimer);
+        function stopVoiceInput() {
+            if (recognition) {
+                recognition.stop();
+                recognition = null;
+            }
+            isListening = false;
+            const micIcon = document.getElementById('mic-icon');
+            if (micIcon) {
+                micIcon.innerText = 'mic';
+                micIcon.style.color = '';
+            }
         }
+
+        function startTranscription() {}
+        function stopTranscription() { stopVoiceInput(); }
 
         let currentStream = null;
         let currentFacingMode = 'environment';
@@ -1207,7 +1246,7 @@
             textEl.innerText = "Drafting Report...";
 
             try {
-                const response = await fetch('http://localhost:3000/generate-fir', {
+                const response = await fetch('https://sankat-sahayak-backend.onrender.com/generate-fir', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ description })

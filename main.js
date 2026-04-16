@@ -1,5 +1,6 @@
-const dotenv = require("dotenv");
-dotenv.config();
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config();
+}
 
 const express = require("express");
 const cors = require("cors");
@@ -23,14 +24,84 @@ app.use(cors());
 app.use(express.json());
 
 // ── System prompt ────────────────────────────────────────────────────────────
-const SYSTEM_PROMPT = `You are a legal document assistant. Generate a formal First Information Report (FIR) in Indian format based on the incident description provided.
+const SYSTEM_PROMPT = `You are a legal document assistant for Indian Police. Generate a formal First Information Report (FIR) in the official Indian police format.
 
-Rules:
-- Include plausible date, time, and location derived from the description.
-- Maintain a neutral, formal tone throughout.
-- Do NOT hallucinate or fabricate IPC sections. Do not mention any IPC section unless it is clearly and obviously applicable.
-- Output MUST be valid JSON with exactly two keys: "fir_english" (FIR in English) and "fir_hindi" (same FIR in Hindi).
-- Do not wrap the JSON in markdown code fences or add any text outside the JSON object.`;
+OUTPUT RULES:
+- Do NOT return JSON. Generate FIR as plain formatted text with headings and bullet points.
+- Output exactly TWO blocks separated by the line: ===HINDI===
+- First block = English FIR. Second block = Hindi FIR.
+- Do NOT add any text before the English FIR or after the Hindi FIR.
+- Do NOT use markdown, code fences, or HTML.
+- Do NOT fabricate IPC/BNS sections. Include only clearly applicable sections.
+
+FIR STRUCTURE (apply to BOTH English and Hindi):
+- Each section heading on its own line in ALL CAPS followed by a colon.
+- Every piece of content under a heading starts with "  \u2022 " (two spaces, bullet, space).
+- Leave exactly one blank line between sections.
+- Use this exact order of sections with NO additions, duplications, or omissions:
+
+  1. CASE DIARY NUMBER
+  2. DATE AND TIME OF OCCURRENCE
+  3. PLACE OF OCCURRENCE
+  4. INFORMATION PROVIDED BY
+  5. STATEMENT
+  6. DETAILS OF INJURED / DECEASED PERSON
+  7. NATURE OF INJURIES
+  8. POLICE STATION
+  9. NAME AND ADDRESS OF COMPLAINANT / VICTIM
+  10. SECTIONS APPLIED
+  11. SIGNATURE OF INFORMANT
+  12. SIGNATURE OF SHO / INSPECTING OFFICER
+
+EXAMPLE OUTPUT FORMAT (English):
+CASE DIARY NUMBER:
+  \u2022 CD No. 142/2024
+
+DATE AND TIME OF OCCURRENCE:
+  \u2022 Date: 15/04/2024
+  \u2022 Time: 10:30 PM
+
+PLACE OF OCCURRENCE:
+  \u2022 Near Connaught Place, New Delhi, Delhi - 110001
+
+INFORMATION PROVIDED BY:
+  \u2022 Rahul Sharma (Eyewitness)
+
+STATEMENT:
+  \u2022 On the night of 15th April 2024, at approximately 10:30 PM, a speeding vehicle struck a pedestrian at Connaught Place. The victim sustained serious injuries and was immediately rushed to hospital. The accused fled the scene.
+
+DETAILS OF INJURED / DECEASED PERSON:
+  \u2022 Name: Not identified
+  \u2022 Age: Approximately 35 years
+  \u2022 Gender: Male
+
+NATURE OF INJURIES:
+  \u2022 Serious head injuries and multiple fractures reported. Victim in critical condition.
+
+POLICE STATION:
+  \u2022 Connaught Place Police Station, New Delhi
+
+NAME AND ADDRESS OF COMPLAINANT / VICTIM:
+  \u2022 Name: Rahul Sharma
+  \u2022 Address: 12, Rajpur Road, Delhi - 110054
+
+SECTIONS APPLIED:
+  \u2022 BNS Section 281 (Rash driving on public way)
+  \u2022 BNS Section 125 (Act endangering life)
+
+SIGNATURE OF INFORMANT:
+  \u2022 Rahul Sharma
+
+SIGNATURE OF SHO / INSPECTING OFFICER:
+  \u2022 Inspector Anil Kumar, Connaught Place Police Station
+
+HINDI RULES (for fir_hindi):
+- Translate ALL content — including section headings — into formal legal Hindi.
+- Do NOT use English words. Use proper Hindi equivalents:
+  - accident \u2192 \u0926\u0941\u0930\u094d\u0918\u091f\u0928\u093e, vehicle \u2192 \u0935\u093e\u0939\u0928, nearby \u2192 \u0928\u093f\u0915\u091f, injuries \u2192 \u091a\u094b\u091f\u0947\u0902, complainant \u2192 \u0936\u093f\u0915\u093e\u092f\u0924\u0915\u0930\u094d\u0924\u093e, station \u2192 \u0925\u093e\u0928\u093e
+- Hindi section headings (use exactly):
+  \u0915\u0947\u0938 \u0921\u093e\u092f\u0930\u0940 \u0938\u0902\u0916\u094d\u092f\u093e: | \u0918\u091f\u0928\u093e \u0915\u0940 \u0924\u093f\u0925\u093f \u090f\u0935\u0902 \u0938\u092e\u092f: | \u0918\u091f\u0928\u093e\u0938\u094d\u0925\u0932: | \u0938\u0942\u091a\u0928\u093e \u092a\u094d\u0930\u0926\u093e\u0924\u093e: | \u0935\u093f\u0935\u0930\u0923: | \u0918\u093e\u092f\u0932 / \u092e\u0943\u0924\u0915 \u0915\u093e \u0935\u093f\u0935\u0930\u0923: | \u091a\u094b\u091f\u094b\u0902 \u0915\u0940 \u092a\u094d\u0930\u0915\u0943\u0924\u093f: | \u0925\u093e\u0928\u093e: | \u0936\u093f\u0915\u093e\u092f\u0924\u0915\u0930\u094d\u0924\u093e / \u092a\u0940\u0921\u093c\u093f\u0924 \u0915\u093e \u0928\u093e\u092e \u090f\u0935\u0902 \u092a\u0924\u093e: | \u0932\u093e\u0917\u0942 \u0927\u093e\u0930\u093e\u090f\u0901: | \u0938\u0942\u091a\u0928\u093e\u0926\u093e\u0924\u093e \u0915\u0947 \u0939\u0938\u094d\u0924\u093e\u0915\u094d\u0937\u0930: | \u0925\u093e\u0928\u093e\u0927\u094d\u092f\u0915\u094d\u0937 / \u0928\u093f\u0930\u0940\u0915\u094d\u0937\u0923 \u0905\u0927\u093f\u0915\u093e\u0930\u0940 \u0915\u0947 \u0939\u0938\u094d\u0924\u093e\u0915\u094d\u0937\u0930:
+- Bullet format remains: "  \u2022 " prefix`;
 
 // ── GET /test ────────────────────────────────────────────────────────────────
 app.get("/test", (req, res) => {
@@ -58,47 +129,12 @@ app.post("/trigger-sos", (req, res) => {
   });
 });
 //---------------------------------------------------
-function cleanText(text) {
+// cleanFIRText: strip leftover placeholder brackets, preserve line breaks
+function cleanFIRText(text) {
+  if (typeof text !== "string") return String(text);
   return text
     .replace(/\[.*?\]/g, "") // remove placeholders like [To be filled]
-    .replace(/\s+/g, " ")    // fix spacing
     .trim();
-}
-function formatFIR(data) {
-  let text = "";
-
-  for (const section in data) {
-    text += `${section.replace(/_/g, " ").toUpperCase()}:\n`;
-
-    const sectionData = data[section];
-
-    // 🔥 If it's an object → iterate
-    if (sectionData && typeof sectionData === "object" && !Array.isArray(sectionData)) {
-      for (const key in sectionData) {
-        let value = sectionData[key];
-
-        // ✅ Convert EVERYTHING to string safely
-        if (typeof value === "object") {
-          value = JSON.stringify(value);
-        }
-
-        text += `- ${key}: ${value}\n`;
-      }
-    } else {
-      // 🔥 Direct string case
-      let value = sectionData;
-
-      if (typeof value === "object") {
-        value = JSON.stringify(value);
-      }
-
-      text += `- ${value}\n`;
-    }
-
-    text += "\n";
-  }
-
-  return text;
 }
 // ── POST /generate-fir ───────────────────────────────────────────────────────
 //
@@ -135,47 +171,46 @@ app.post("/generate-fir", async (req, res) => {
       ],
     });
 
-    const raw = completion.choices[0].message.content.trim();
-    console.log("[POST /generate-fir] Raw LLM response:", raw);
+    const raw = completion.choices[0].message.content;
 
-    // Strip possible markdown code fences the model might add
+    // Strip markdown code fences if model adds them
     const cleaned = raw
-      .replace(/^```(?:json)?\s*/i, "")
-      .replace(/\s*```$/i, "");
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
 
-    // ── Parse JSON ───────────────────────────────────────────────────────────
-    let parsed;
-    try {
-      parsed = JSON.parse(cleaned);
-    } catch (e) {
-      console.error("JSON parse failed, attempting fix...");
+    console.log("[POST /generate-fir] Cleaned LLM response:", cleaned);
 
-      // Fix common issues like 1/2024 → "1/2024"
-      const fixed = cleaned.replace(/:\s*([0-9]+\/[0-9]+)/g, ': "$1"');
+    // ── Split English / Hindi ─────────────────────────────────────────────────
+    // Strategy 1: explicit delimiter ===HINDI===
+    // Strategy 2: Hindi section starts with "केस डायरी संख्या"
+    const DELIMITER   = "===HINDI===";
+    const HINDI_HEADING = "केस डायरी संख्या";
 
-      try {
-        parsed = JSON.parse(fixed);
-      } catch (e2) {
-        console.error("[POST /generate-fir] Still failed after fix.");
-        return res.status(502).json({
-          error: "LLM returned malformed JSON",
-          raw_response: raw,
-        });
+    let englishPart = cleaned;
+    let hindiPart   = "";
+
+    const explicitIndex = cleaned.indexOf(DELIMITER);
+    if (explicitIndex !== -1) {
+      englishPart = cleaned.substring(0, explicitIndex).trim();
+      hindiPart   = cleaned.substring(explicitIndex + DELIMITER.length).trim();
+      console.log("[POST /generate-fir] Split on explicit ===HINDI=== delimiter.");
+    } else {
+      // Fallback: detect Hindi block by its first heading
+      const hindiIndex = cleaned.indexOf(HINDI_HEADING);
+      if (hindiIndex !== -1) {
+        englishPart = cleaned.substring(0, hindiIndex).trim();
+        hindiPart   = cleaned.substring(hindiIndex).trim();
+        console.log("[POST /generate-fir] Split on Hindi heading fallback.");
+      } else {
+        console.warn("[POST /generate-fir] No split point found; returning full text for English, empty for Hindi.");
       }
-    }
-
-    if (!parsed.fir_english || !parsed.fir_hindi) {
-      console.error("[POST /generate-fir] LLM response missing required fields.");
-      return res.status(502).json({
-        error: "LLM response missing required fields (fir_english / fir_hindi).",
-        raw_response: parsed,
-      });
     }
 
     console.log("[POST /generate-fir] FIR generated successfully.");
     return res.json({
-      fir_english: cleanText(formatFIR(parsed.fir_english)),
-      fir_hindi: cleanText(formatFIR(parsed.fir_hindi)),
+      fir_english: cleanFIRText(englishPart),
+      fir_hindi:   cleanFIRText(hindiPart) || "Hindi version not available",
     });
   } catch (err) {
     console.error("[POST /generate-fir] Unexpected error:", err.message);
