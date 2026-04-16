@@ -265,7 +265,8 @@
                 <h2
                     class="font-headline font-black text-[2.5rem] leading-[1.1] tracking-tight text-on-surface dark:text-white text-center transition-colors">
                     <span data-lang-key="hero_title_1">Emergency</span><br /><span data-lang-key="hero_title_2"
-                        class="text-primary tracking-tighter">Reporting.</span></h2>
+                        class="text-primary tracking-tighter">Reporting.</span>
+                </h2>
                 <div onclick="openModal('map-modal')"
                     class="cursor-pointer flex items-center gap-2 mt-4 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl w-max px-4 py-2 rounded-full border border-black/5 dark:border-white/10 shadow-sm hover:scale-105 active:scale-95 transition-all">
                     <span class="material-symbols-outlined text-green-600 dark:text-green-400 text-base"
@@ -337,10 +338,10 @@
                                 title="Attach Media">
                                 <span class="material-symbols-outlined text-[20px]">add_a_photo</span>
                             </button>
-                            <button onclick="openModal('voice-modal')"
+                            <button id="mic-btn" onclick="toggleVoiceInput()"
                                 class="w-11 h-11 rounded-full bg-surface-glass dark:bg-slate-800/50 backdrop-blur-lg text-on-surface-variant dark:text-slate-300 flex items-center justify-center shadow-sm hover:bg-white dark:hover:bg-slate-700 hover:text-primary dark:hover:text-primary active:scale-90 transition-all border border-white/80 dark:border-white/10"
                                 title="Voice Dictation">
-                                <span
+                                <span id="mic-icon"
                                     class="material-symbols-outlined text-[20px] text-primary dark:text-primary">mic</span>
                             </button>
                         </div>
@@ -355,7 +356,7 @@
             </div>
 
             <div class="mt-8">
-                <button
+                <button id="generate-fir-btn" onclick="generateFIR()"
                     class="w-full h-14 bg-on-surface dark:bg-white text-white dark:text-slate-900 font-headline font-extrabold text-[14px] uppercase tracking-widest rounded-full shadow-xl shadow-black/10 active:scale-[0.98] transition-all hover:bg-black dark:hover:bg-slate-200 flex items-center justify-center gap-2">
                     <span class="material-symbols-outlined text-[20px]">bolt</span>
                     <span data-lang-key="generate">Generate Official FIR</span>
@@ -368,7 +369,7 @@
             <h4 data-lang-key="draft_archive"
                 class="font-headline font-black text-xl px-2 text-on-surface dark:text-slate-200 tracking-tight">Drafts
                 Archive</h4>
-            <div
+            <div id="fir-output-section"
                 class="bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2rem] p-10 flex flex-col items-center justify-center text-center min-h-[220px] relative overflow-hidden group hover:bg-white/60 dark:hover:bg-slate-900/60 transition-colors">
 
                 <div class="absolute inset-0 opacity-50 dark:opacity-20"
@@ -447,7 +448,8 @@
                         <div class="text-green-400 font-mono text-[13px] tracking-wide mt-1">LAT: 19.0760° N<br />LNG:
                             72.8777° E</div>
                         <div class="text-white font-medium text-xs mt-2 pt-2 border-t border-white/10 w-full">Accuracy:
-                            <span class="text-primary font-bold">±3 Meters</span></div>
+                            <span class="text-primary font-bold">±3 Meters</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -624,38 +626,168 @@
             if (id === 'voice-modal') stopTranscription();
         }
 
-        // Fake Transcription Logic
-        let transcriptTimer;
-        let currentWordIndex = 0;
-        const mockTextStr = "At approximately 10:30 AM, a severe collision occurred between a black sedan and a motorcycle at the main intersection. The suspect immediately fled the scene.";
-        const mockWords = mockTextStr.split(' ');
+        // ── Voice Input (Web Speech API) ──────────────────────────────────────
+        let recognition = null;
+        let isListening = false;
 
-        function startTranscription() {
-            const transcriptEl = document.getElementById('live-transcript');
-            const textAreaEl = document.getElementById('main-textarea');
-            transcriptEl.innerText = "Listening...";
-            currentWordIndex = 0;
-
-            if (!textAreaEl.value.includes(mockTextStr)) textAreaEl.value = "";
-            clearInterval(transcriptTimer);
-
-            setTimeout(() => {
-                transcriptEl.innerText = "";
-                transcriptTimer = setInterval(() => {
-                    if (currentWordIndex < mockWords.length) {
-                        transcriptEl.innerText += mockWords[currentWordIndex] + " ";
-                        textAreaEl.value += mockWords[currentWordIndex] + " ";
-                        currentWordIndex++;
-                    } else {
-                        clearInterval(transcriptTimer);
-                        setTimeout(() => closeModal('voice-modal'), 1200);
-                    }
-                }, 280);
-            }, 1500);
+        function toggleVoiceInput() {
+            if (isListening) {
+                stopVoiceInput();
+            } else {
+                startVoiceInput();
+            }
         }
 
-        function stopTranscription() {
-            clearInterval(transcriptTimer);
+        function startVoiceInput() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert('Speech recognition is not supported in this browser. Please use Chrome or Edge.');
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.lang = 'en-IN';   // supports en-IN and hi-IN
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            const textarea = document.getElementById('main-textarea');
+            const micIcon = document.getElementById('mic-icon');
+            let finalTranscript = textarea.value;
+
+            recognition.onstart = () => {
+                isListening = true;
+                micIcon.innerText = 'mic_off';
+                micIcon.style.color = '#d32f2f';
+            };
+
+            recognition.onresult = (event) => {
+                let interim = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript + ' ';
+                    } else {
+                        interim += event.results[i][0].transcript;
+                    }
+                }
+                textarea.value = finalTranscript + interim;
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                stopVoiceInput();
+            };
+
+            recognition.onend = () => stopVoiceInput();
+
+            recognition.start();
+        }
+
+        function stopVoiceInput() {
+            if (recognition) {
+                recognition.stop();
+                recognition = null;
+            }
+            isListening = false;
+            const micIcon = document.getElementById('mic-icon');
+            if (micIcon) {
+                micIcon.innerText = 'mic';
+                micIcon.style.color = '';
+            }
+        }
+
+        // Keep modal voice button working (opens modal & starts recognition)
+        function startTranscription() { /* no-op – modal kept for UI only */ }
+        function stopTranscription() { stopVoiceInput(); }
+
+        // ── Generate FIR ──────────────────────────────────────────────────────
+        let currentLang = 'english';
+        let lastData = null;
+
+        async function generateFIR() {
+            const textarea = document.getElementById('main-textarea');
+            const text = textarea.value.trim();
+
+            if (!text) {
+                alert('Please describe the incident before generating a FIR.');
+                return;
+            }
+
+            const btn = document.getElementById('generate-fir-btn');
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            btn.querySelector('span[data-lang-key]').innerText = 'Generating…';
+
+            try {
+                const resp = await fetch('https://sankat-sahayak-backend.onrender.com/generate-fir', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ description: text })
+                });
+
+                if (!resp.ok) throw new Error(`Server error: ${resp.status}`);
+
+                const data = await resp.json();
+                currentLang = 'english';   // reset to English for each new generation
+                displayFIR(data);
+            } catch (err) {
+                alert('Failed to generate FIR: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = '';
+                btn.querySelector('span[data-lang-key]').innerText = 'Generate Official FIR';
+            }
+        }
+
+        function displayFIR(data) {
+            lastData = data;
+            renderFIR();
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'english' ? 'hindi' : 'english';
+            renderFIR();
+        }
+
+        function renderFIR() {
+            if (!lastData) return;
+
+            const isEnglish = currentLang === 'english';
+            const firText = isEnglish
+                ? (lastData.fir_english || lastData.fir || JSON.stringify(lastData))
+                : (lastData.fir_hindi || lastData.fir || JSON.stringify(lastData));
+            const langLabel = isEnglish ? 'English' : 'हिंदी';
+            const btnLabel = isEnglish ? 'Switch to हिंदी' : 'Switch to English';
+
+            const section = document.getElementById('fir-output-section');
+            section.innerHTML = `
+                <div class="w-full text-left space-y-4 relative z-10">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="material-symbols-outlined text-primary text-[22px]" style="font-variation-settings:'FILL' 1">description</span>
+                        <span class="font-headline font-extrabold text-[15px] text-on-surface dark:text-white tracking-tight">Generated FIR (${langLabel})</span>
+                        <span class="ml-auto text-[10px] font-bold text-primary/70 uppercase tracking-widest bg-primary/10 px-2 py-0.5 rounded-full">Official</span>
+                    </div>
+                    <button onclick="toggleLanguage()" class="flex items-center gap-1.5 text-xs font-bold text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 px-3 py-1.5 rounded-full transition-colors">
+                        <span class="material-symbols-outlined text-[16px]">translate</span> ${btnLabel}
+                    </button>
+                    <pre class="whitespace-pre-wrap font-body text-[13px] leading-relaxed text-on-surface dark:text-slate-200 bg-white/60 dark:bg-slate-800/60 rounded-2xl p-5 border border-black/5 dark:border-white/10 shadow-inner overflow-auto max-h-[500px]">${escapeHtml(firText)}</pre>
+                    <button onclick="copyFIR(this)" class="flex items-center gap-1.5 text-xs font-bold text-primary hover:underline mt-1">
+                        <span class="material-symbols-outlined text-[16px]">content_copy</span> Copy FIR
+                    </button>
+                </div>
+            `;
+            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function copyFIR(btn) {
+            const pre = btn.closest('div').querySelector('pre');
+            navigator.clipboard.writeText(pre.innerText).then(() => {
+                btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">check</span> Copied!';
+                setTimeout(() => { btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">content_copy</span> Copy FIR'; }, 2000);
+            });
         }
 
         function simulatePhotoCapture() {
