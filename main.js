@@ -53,12 +53,31 @@ function formatFIR(data) {
   let text = "";
 
   for (const section in data) {
-    text += `${section}:\n`;
+    text += `${section.replace(/_/g, " ").toUpperCase()}:\n`;
 
     const sectionData = data[section];
 
-    for (const key in sectionData) {
-      text += `- ${key}: ${sectionData[key]}\n`;
+    // 🔥 If it's an object → iterate
+    if (sectionData && typeof sectionData === "object" && !Array.isArray(sectionData)) {
+      for (const key in sectionData) {
+        let value = sectionData[key];
+
+        // ✅ Convert EVERYTHING to string safely
+        if (typeof value === "object") {
+          value = JSON.stringify(value);
+        }
+
+        text += `- ${key}: ${value}\n`;
+      }
+    } else {
+      // 🔥 Direct string case
+      let value = sectionData;
+
+      if (typeof value === "object") {
+        value = JSON.stringify(value);
+      }
+
+      text += `- ${value}\n`;
     }
 
     text += "\n";
@@ -89,23 +108,7 @@ app.post("/generate-fir", async (req, res) => {
     console.log("[POST /generate-fir] Input description:", description.trim());
     console.log("USING MODEL: llama-3.1-8b-instant");
     //-function calling code-----------------------------------------------------
-    function formatFIR(data) {
-      let text = "";
 
-      for (const section in data) {
-        text += `${section}:\n`;
-
-        const sectionData = data[section];
-
-        for (const key in sectionData) {
-          text += `- ${key}: ${sectionData[key]}\n`;
-        }
-
-        text += "\n";
-      }
-
-      return text;
-    }
     // ── Call Groq ────────────────────────────────────────────────────────────
     const userPrompt = `Incident description:\n"${description.trim()}"`;
 
