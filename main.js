@@ -27,9 +27,11 @@ app.use(express.json());
 const SYSTEM_PROMPT = `You are a legal document assistant for Indian Police. Generate a formal First Information Report (FIR) in the official Indian police format.
 
 OUTPUT RULES:
-- Output MUST be valid JSON with exactly two keys: "fir_english" (string) and "fir_hindi" (string).
-- Both values are plain text strings. Do NOT use markdown, HTML, or nested JSON inside the strings.
-- Do NOT wrap the JSON in markdown code fences or add any text outside the JSON object.
+- Do NOT return JSON. Generate FIR as plain formatted text with headings and bullet points.
+- Output exactly TWO blocks separated by the line: ===HINDI===
+- First block = English FIR. Second block = Hindi FIR.
+- Do NOT add any text before the English FIR or after the Hindi FIR.
+- Do NOT use markdown, code fences, or HTML.
 - Do NOT fabricate IPC/BNS sections. Include only clearly applicable sections.
 
 FIR STRUCTURE (apply to BOTH English and Hindi):
@@ -112,21 +114,12 @@ app.get("/", (req, res) => {
   return res.json({ status: "ok", endpoints: ["POST /generate-fir", "GET /test"] });
 });
 //---------------------------------------------------
-// cleanText: strip any leftover placeholder brackets only; preserve line breaks
-function cleanText(text) {
+// cleanFIRText: strip leftover placeholder brackets, preserve line breaks
+function cleanFIRText(text) {
   if (typeof text !== "string") return String(text);
   return text
     .replace(/\[.*?\]/g, "") // remove placeholders like [To be filled]
     .trim();
-}
-
-// formatFIR: AI now returns pre-formatted plain text; just pass it through
-function formatFIR(data) {
-  if (typeof data === "string") return data;
-  // Fallback for unexpected object shape
-  return Object.entries(data)
-    .map(([k, v]) => `${k.replace(/_/g, " ").toUpperCase()}:\n  \u2022 ${v}`)
-    .join("\n\n");
 }
 // ── POST /generate-fir ───────────────────────────────────────────────────────
 //
@@ -163,47 +156,36 @@ app.post("/generate-fir", async (req, res) => {
       ],
     });
 
-    const raw = completion.choices[0].message.content.trim();
-    console.log("[POST /generate-fir] Raw LLM response:", raw);
+    const raw = completion.choices[0].message.content;
 
-    // Strip possible markdown code fences the model might add
+    // Strip markdown code fences if model adds them
     const cleaned = raw
-      .replace(/^```(?:json)?\s*/i, "")
-      .replace(/\s*```$/i, "");
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
 
-    // ── Parse JSON ───────────────────────────────────────────────────────────
-    let parsed;
-    try {
-      parsed = JSON.parse(cleaned);
-    } catch (e) {
-      console.error("JSON parse failed, attempting fix...");
+    console.log("[POST /generate-fir] Cleaned LLM response:", cleaned);
 
-      // Fix common issues like 1/2024 → "1/2024"
-      const fixed = cleaned.replace(/:\s*([0-9]+\/[0-9]+)/g, ': "$1"');
+    // ── Split English / Hindi on delimiter ───────────────────────────────────
+    const DELIMITER = "===HINDI===";
+    const delimIndex = cleaned.indexOf(DELIMITER);
 
-      try {
-        parsed = JSON.parse(fixed);
-      } catch (e2) {
-        console.error("[POST /generate-fir] Still failed after fix.");
-        return res.status(502).json({
-          error: "LLM returned malformed JSON",
-          raw_response: raw,
-        });
-      }
-    }
+    let firEnglish, firHindi;
 
-    if (!parsed.fir_english || !parsed.fir_hindi) {
-      console.error("[POST /generate-fir] LLM response missing required fields.");
-      return res.status(502).json({
-        error: "LLM response missing required fields (fir_english / fir_hindi).",
-        raw_response: parsed,
-      });
+    if (delimIndex !== -1) {
+      firEnglish = cleaned.slice(0, delimIndex).trim();
+      firHindi   = cleaned.slice(delimIndex + DELIMITER.length).trim();
+    } else {
+      // Fallback: no delimiter found — return full text for both languages
+      console.warn("[POST /generate-fir] Delimiter not found; returning full text for both languages.");
+      firEnglish = cleaned;
+      firHindi   = cleaned;
     }
 
     console.log("[POST /generate-fir] FIR generated successfully.");
     return res.json({
-      fir_english: cleanText(formatFIR(parsed.fir_english)),
-      fir_hindi: cleanText(formatFIR(parsed.fir_hindi)),
+      fir_english: cleanFIRText(firEnglish),
+      fir_hindi:   cleanFIRText(firHindi),
     });
   } catch (err) {
     console.error("[POST /generate-fir] Unexpected error:", err.message);
