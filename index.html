@@ -1225,11 +1225,62 @@
         // Initialize GPS routine automatically on page load
         window.addEventListener('DOMContentLoaded', initLocationTracking);
 
-        // --- FIR Generation Integration ---
+        // ── Generate FIR ──────────────────────────────────────────────────────────
+        let firData = { english: "", hindi: "" };
+        let currentFIRLang = "english";
+
+        function renderInlineFIR() {
+            const content = currentFIRLang === "english" ? firData.english : firData.hindi;
+            const langLabel  = currentFIRLang === "english" ? "English" : "हिंदी";
+            const btnLabel   = currentFIRLang === "english" ? "Switch to हिंदी" : "Switch to English";
+
+            const homeResult = document.getElementById('home-fir-result');
+            homeResult.classList.remove('hidden');
+            homeResult.innerHTML = `
+                <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-black/5 dark:border-white/10 relative overflow-hidden group">
+                    <div class="flex items-center justify-between mb-4 border-b border-black/5 dark:border-white/5 pb-3">
+                        <h4 class="font-headline font-black text-lg text-green-600 dark:text-green-400 tracking-tight flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[20px]">check_circle</span>
+                            Generated FIR (${langLabel})
+                        </h4>
+                        <button onclick="this.closest('#home-fir-result').classList.add('hidden')"
+                            class="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex justify-center items-center text-on-surface dark:text-white hover:bg-black/10 dark:hover:bg-white/20 transition-colors">
+                            <span class="material-symbols-outlined text-[18px]">close</span>
+                        </button>
+                    </div>
+
+                    <!-- Language Toggle -->
+                    <button onclick="currentFIRLang = currentFIRLang === 'english' ? 'hindi' : 'english'; renderInlineFIR();"
+                        class="flex items-center gap-1.5 text-xs font-bold text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 px-3 py-1.5 rounded-full transition-colors mb-4">
+                        <span class="material-symbols-outlined text-[16px]">translate</span> ${btnLabel}
+                    </button>
+
+                    <!-- FIR Content -->
+                    <pre class="whitespace-pre-wrap text-sm bg-white dark:bg-slate-900 p-4 rounded-xl shadow-inner border border-black/5 dark:border-white/10 font-body leading-relaxed text-on-surface dark:text-slate-200 max-h-[45vh] overflow-y-auto mb-5">${escapeHtml(content)}</pre>
+
+                    <!-- Actions -->
+                    <div class="flex gap-2">
+                        <button onclick="downloadFIRAsPDF(event, \`${firData.english.replace(/`/g, '\\`')}\`)"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold uppercase tracking-widest text-[13px] active:scale-95 transition-all flex justify-center items-center gap-2 shadow-lg shadow-blue-600/30">
+                            <span class="material-symbols-outlined text-[20px]">picture_as_pdf</span> Download FIR as PDF
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
         async function generateFIR() {
-            const btn = document.getElementById('generate-fir-btn');
-            const icon = document.getElementById('generate-icon');
-            const textEl = document.getElementById('generate-text');
+            const btn     = document.getElementById('generate-fir-btn');
+            const icon    = document.getElementById('generate-icon');
+            const textEl  = document.getElementById('generate-text');
             const textArea = document.getElementById('main-textarea');
             const description = textArea.value.trim();
 
@@ -1251,38 +1302,26 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ description })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (response.ok) {
-                    // Show result on home screen inline
-                    const homeResult = document.getElementById('home-fir-result');
-                    homeResult.classList.remove('hidden');
-                    homeResult.innerHTML = `
-                        <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-black/5 dark:border-white/10 relative overflow-hidden group">
-                            <div class="flex items-center justify-between mb-4 border-b border-black/5 dark:border-white/5 pb-3">
-                                <h4 class="font-headline font-black text-lg text-green-600 dark:text-green-400 tracking-tight flex items-center gap-2"><span class="material-symbols-outlined text-[20px]">check_circle</span> Generated FIR</h4>
-                                <button onclick="this.parentElement.parentElement.parentElement.classList.add('hidden')" class="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex justify-center items-center text-on-surface dark:text-white hover:bg-black/10 dark:hover:bg-white/20 transition-colors"><span class="material-symbols-outlined text-[18px]">close</span></button>
-                            </div>
-                            <div class="prose prose-sm dark:prose-invert max-w-none font-medium leading-relaxed whitespace-pre-wrap max-h-[40vh] overflow-y-auto mb-5 custom-scrollbar pr-2 pb-2 text-on-surface dark:text-slate-200">
-                                ${data.fir_english}
-                            </div>
-                            <div class="flex gap-2">
-                                <button onclick="downloadFIRAsPDF(event, \`${data.fir_english.replace(/`/g, '\\`')}\`)" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold uppercase tracking-widest text-[13px] active:scale-95 transition-all flex justify-center items-center gap-2 shadow-lg shadow-blue-600/30">
-                                    <span class="material-symbols-outlined text-[20px]">picture_as_pdf</span> Download FIR as PDF
-                                </button>
-                            </div>
-                        </div>
-                    `;
+                    // Store both language versions; default to English
+                    firData.english = data.fir_english || "";
+                    firData.hindi   = data.fir_hindi   || "Hindi version not available";
+                    currentFIRLang  = "english";
+
+                    // Render inline result with toggle
+                    renderInlineFIR();
 
                     // Push card silently to History archive
-                    renderFIRCard(data.fir_english, data.fir_hindi);
+                    renderFIRCard(firData.english, firData.hindi);
                 } else {
                     alert("Error generating FIR: " + (data.error || "Unknown error"));
                 }
             } catch (err) {
                 console.error("Fetch failed", err);
-                alert("Could not connect to the Backend AI Server. Make sure localhost:3000 is running.");
+                alert("Could not connect to the Backend AI Server.");
             } finally {
                 // UI Restore state
                 btn.disabled = false;
