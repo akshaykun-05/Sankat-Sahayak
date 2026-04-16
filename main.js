@@ -166,26 +166,36 @@ app.post("/generate-fir", async (req, res) => {
 
     console.log("[POST /generate-fir] Cleaned LLM response:", cleaned);
 
-    // ── Split English / Hindi on delimiter ───────────────────────────────────
-    const DELIMITER = "===HINDI===";
-    const delimIndex = cleaned.indexOf(DELIMITER);
+    // ── Split English / Hindi ─────────────────────────────────────────────────
+    // Strategy 1: explicit delimiter ===HINDI===
+    // Strategy 2: Hindi section starts with "केस डायरी संख्या"
+    const DELIMITER   = "===HINDI===";
+    const HINDI_HEADING = "केस डायरी संख्या";
 
-    let firEnglish, firHindi;
+    let englishPart = cleaned;
+    let hindiPart   = "";
 
-    if (delimIndex !== -1) {
-      firEnglish = cleaned.slice(0, delimIndex).trim();
-      firHindi   = cleaned.slice(delimIndex + DELIMITER.length).trim();
+    const explicitIndex = cleaned.indexOf(DELIMITER);
+    if (explicitIndex !== -1) {
+      englishPart = cleaned.substring(0, explicitIndex).trim();
+      hindiPart   = cleaned.substring(explicitIndex + DELIMITER.length).trim();
+      console.log("[POST /generate-fir] Split on explicit ===HINDI=== delimiter.");
     } else {
-      // Fallback: no delimiter found — return full text for both languages
-      console.warn("[POST /generate-fir] Delimiter not found; returning full text for both languages.");
-      firEnglish = cleaned;
-      firHindi   = cleaned;
+      // Fallback: detect Hindi block by its first heading
+      const hindiIndex = cleaned.indexOf(HINDI_HEADING);
+      if (hindiIndex !== -1) {
+        englishPart = cleaned.substring(0, hindiIndex).trim();
+        hindiPart   = cleaned.substring(hindiIndex).trim();
+        console.log("[POST /generate-fir] Split on Hindi heading fallback.");
+      } else {
+        console.warn("[POST /generate-fir] No split point found; returning full text for English, empty for Hindi.");
+      }
     }
 
     console.log("[POST /generate-fir] FIR generated successfully.");
     return res.json({
-      fir_english: cleanFIRText(firEnglish),
-      fir_hindi:   cleanFIRText(firHindi),
+      fir_english: cleanFIRText(englishPart),
+      fir_hindi:   cleanFIRText(hindiPart) || "Hindi version not available",
     });
   } catch (err) {
     console.error("[POST /generate-fir] Unexpected error:", err.message);
