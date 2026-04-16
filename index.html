@@ -13,6 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -54,6 +55,10 @@
                         "float": {
                             "0%, 100%": { transform: "translateY(0)" },
                             "50%": { transform: "translateY(-15px)" }
+                        },
+                        "fadeIn": {
+                            "0%": { opacity: 0, transform: "translateY(10px)" },
+                            "100%": { opacity: 1, transform: "translateY(0)" }
                         }
                     }
                 },
@@ -192,6 +197,21 @@
             top: 27px;
             height: 2px;
         }
+
+        .sidebar-hidden .sidebar-backdrop { opacity: 0; pointer-events: none; }
+        .sidebar-hidden .sidebar-pane { transform: translateX(-100%); }
+        .sidebar-active .sidebar-backdrop { opacity: 1; pointer-events: auto; }
+        .sidebar-active .sidebar-pane { transform: translateX(0); }
+        .sidebar-hidden { pointer-events: none; }
+        .sidebar-active { pointer-events: auto; }
+        
+        @keyframes slideInTop {
+            0% { transform: translateY(-30px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        .slide-in-top {
+            animation: slideInTop 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+        }
     </style>
 </head>
 
@@ -209,7 +229,7 @@
         class="fixed top-0 w-full z-50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl border-b border-white/60 dark:border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.03)] px-6 py-4 transition-all">
         <div class="flex justify-between items-center max-w-2xl mx-auto">
             <div class="flex items-center gap-4">
-                <button
+                <button onclick="document.getElementById('sidebar-menu').classList.remove('sidebar-hidden'); document.getElementById('sidebar-menu').classList.add('sidebar-active');"
                     class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all outline-none text-primary">
                     <span class="material-symbols-outlined text-[26px]">menu</span>
                 </button>
@@ -226,15 +246,15 @@
 
             <div class="flex items-center gap-3 relative group">
                 <!-- Translate Dropdown -->
-                <div class="relative group">
-                    <button
+                <div class="relative" id="lang-dropdown-wrapper">
+                    <button onclick="document.getElementById('lang-popup-menu').classList.toggle('modal-active'); document.getElementById('lang-popup-menu').classList.toggle('modal-hidden');"
                         class="flex items-center gap-1.5 bg-white/80 dark:bg-slate-800/80 px-3 py-1.5 rounded-full border border-black/5 dark:border-white/10 text-on-surface-variant dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-all text-xs font-bold tracking-widest shadow-sm active:scale-95">
                         <span class="material-symbols-outlined text-[18px]">translate</span>
                         <span>EN / HI</span>
                     </button>
                     <!-- Popup Menu -->
-                    <div
-                        class="absolute right-0 top-full mt-3 w-40 bg-white/90 dark:bg-slate-800/90 backdrop-blur-3xl rounded-2xl shadow-2xl border border-white/50 dark:border-white/10 overflow-hidden opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all flex flex-col z-50 origin-top-right transform scale-95 group-hover:scale-100 duration-200">
+                    <div id="lang-popup-menu"
+                        class="absolute right-0 top-full mt-3 w-40 bg-white/90 dark:bg-slate-800/90 backdrop-blur-3xl rounded-2xl shadow-2xl border border-white/50 dark:border-white/10 overflow-hidden modal-hidden transition-all flex flex-col z-50 origin-top-right duration-200">
                         <button id="lang-btn-en" onclick="changeLanguage('en')"
                             class="text-left px-5 py-3.5 text-sm font-bold text-primary bg-primary/5 hover:bg-primary/10 transition-colors flex items-center justify-between">
                             English
@@ -248,8 +268,8 @@
                 </div>
 
                 <!-- Profile -->
-                <div
-                    class="h-10 w-10 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center overflow-hidden transition-all duration-300 active:scale-95 shadow-md border border-white/80 dark:border-white/20 ring-2 ring-primary/10">
+                <div onclick="openModal('profile-modal')"
+                    class="cursor-pointer h-10 w-10 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center overflow-hidden transition-all duration-300 active:scale-95 hover:scale-105 shadow-md border border-white/80 dark:border-white/20 ring-2 ring-primary/10">
                     <img alt="User" class="h-full w-full object-cover"
                         src="https://lh3.googleusercontent.com/aida-public/AB6AXuAo2ef69w10rnodsixAHQBUzeV1VCp9tTRKl7XlRF1osAk2Kx7n4zn_yMrmaCE5zECVk3FlP_1R2wENgJRU1nDQmczxSmfq_ZkghIQ_V-Lo9EeLKYQQIX8zJGVQjjD6XfcffX_jPM97hPp37S4guxzgl55EZ4WwcfoPdtxHdDStcoDiaPDbnXliaUi1F_IOsgJ7ThnqEEG5GWaPvKH7N_iqnFWax4F9-DXr4MgLFvnWlydZnHy8q_YhWC2yvfU8A-8yJ59T1OMANNYX" />
                 </div>
@@ -257,7 +277,7 @@
         </div>
     </header>
 
-    <main class="pt-[100px] pb-[120px] px-6 max-w-2xl mx-auto space-y-10">
+    <main id="view-home" class="pt-[100px] pb-[120px] px-6 max-w-2xl mx-auto space-y-10">
 
         <!-- Hero Section -->
         <section class="space-y-3 pt-6 text-center flex flex-col items-center relative z-10 w-full">
@@ -265,15 +285,13 @@
                 <h2
                     class="font-headline font-black text-[2.5rem] leading-[1.1] tracking-tight text-on-surface dark:text-white text-center transition-colors">
                     <span data-lang-key="hero_title_1">Emergency</span><br /><span data-lang-key="hero_title_2"
-                        class="text-primary tracking-tighter">Reporting.</span>
-                </h2>
+                        class="text-primary tracking-tighter">Reporting.</span></h2>
                 <div onclick="openModal('map-modal')"
-                    class="cursor-pointer flex items-center gap-2 mt-4 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl w-max px-4 py-2 rounded-full border border-black/5 dark:border-white/10 shadow-sm hover:scale-105 active:scale-95 transition-all">
-                    <span class="material-symbols-outlined text-green-600 dark:text-green-400 text-base"
+                    class="cursor-pointer flex items-center gap-2 mt-4 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl max-w-[90vw] md:max-w-md px-4 py-2 rounded-[1.5rem] border border-black/5 dark:border-white/10 shadow-sm hover:scale-105 active:scale-95 transition-all">
+                    <span class="material-symbols-outlined text-green-600 dark:text-green-400 text-xl flex-shrink-0"
                         style="font-variation-settings: 'FILL' 1;">location_on</span>
                     <span data-lang-key="location"
-                        class="text-green-700 dark:text-green-400 font-bold text-xs tracking-wider">LOCATION
-                        VERIFIED</span>
+                        class="text-green-700 dark:text-green-400 font-bold text-[11px] leading-tight tracking-wider text-left line-clamp-2">LOCATION VERIFIED</span>
                 </div>
             </div>
         </section>
@@ -289,7 +307,7 @@
 
                 <div class="absolute inset-4 rounded-full bg-primary/10 blur-xl"></div>
 
-                <button
+                <button id="sos-trigger-btn"
                     class="relative w-44 h-44 rounded-full bg-gradient-to-br from-[#ff5252] via-[#d32f2f] to-[#9a0007] text-white flex flex-col items-center justify-center shadow-2xl transition-transform active:scale-[0.88] z-10 animate-heartbeat border-[5px] border-white/30 dark:border-white/10 backdrop-blur-xl">
                     <span class="material-symbols-outlined text-5xl opacity-80 mb-1"
                         style="font-variation-settings: 'FILL' 1;">emergency</span>
@@ -297,9 +315,9 @@
                         class="text-[2.2rem] font-headline font-black tracking-widest leading-none">SOS</span>
                 </button>
             </div>
-            <p data-lang-key="sos_text"
-                class="font-body text-xs font-bold uppercase tracking-[0.2em] text-on-surface-variant/50 dark:text-slate-400 mt-6 absolute bottom-0">
-                Hold to activate</p>
+            <p data-lang-key="sos_text" id="sos-hint-text"
+                class="font-body text-xs font-bold uppercase tracking-[0.2em] text-on-surface-variant/50 dark:text-slate-400 mt-6 absolute bottom-0 transition-colors">
+                Tap to activate</p>
         </section>
 
         <!-- Interactive Reporting Interface -->
@@ -346,11 +364,11 @@
                             </button>
                         </div>
 
-                        <button
-                            class="pointer-events-auto flex items-center gap-2 bg-gradient-to-r from-primary to-[#b71c1c] text-white px-5 h-11 rounded-full font-label font-bold tracking-widest text-xs uppercase hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary/30 border border-primary-light/30">
-                            <span class="material-symbols-outlined text-[16px]">send</span>
-                            <span data-lang-key="submit">Submit</span>
-                        </button>
+                        <label class="pointer-events-auto cursor-pointer flex items-center gap-2 bg-gradient-to-r from-slate-700 to-slate-900 dark:from-slate-600 dark:to-slate-800 text-white px-4 h-11 rounded-full font-label font-bold tracking-widest text-xs uppercase hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-black/20 border border-white/10">
+                            <input type="file" class="hidden" accept="image/*,video/*" onchange="const span = this.parentElement.querySelector('.upload-text'); span.innerText = this.files.length > 0 ? 'Media Added' : 'Upload Media'; if(this.files.length > 0) { const icon = this.parentElement.querySelector('.upload-icon'); icon.innerText='check_circle'; icon.classList.add('text-green-400'); }" />
+                            <span class="material-symbols-outlined text-[18px] upload-icon">upload_file</span>
+                            <span class="upload-text">Upload Media</span>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -358,54 +376,130 @@
             <div class="mt-8">
                 <button id="generate-fir-btn" onclick="generateFIR()"
                     class="w-full h-14 bg-on-surface dark:bg-white text-white dark:text-slate-900 font-headline font-extrabold text-[14px] uppercase tracking-widest rounded-full shadow-xl shadow-black/10 active:scale-[0.98] transition-all hover:bg-black dark:hover:bg-slate-200 flex items-center justify-center gap-2">
-                    <span class="material-symbols-outlined text-[20px]">bolt</span>
-                    <span data-lang-key="generate">Generate Official FIR</span>
+                    <span id="generate-icon" class="material-symbols-outlined text-[20px]">bolt</span>
+                    <span data-lang-key="generate" id="generate-text">Generate Official FIR</span>
                 </button>
             </div>
+
+            <!-- Instant FIR Result Placeholder -->
+            <div id="home-fir-result" class="hidden mt-6 space-y-4 slide-in-top"></div>
+
         </section>
 
-        <!-- Bento Style Output Area -->
-        <section class="space-y-4">
-            <h4 data-lang-key="draft_archive"
-                class="font-headline font-black text-xl px-2 text-on-surface dark:text-slate-200 tracking-tight">Drafts
-                Archive</h4>
-            <div id="fir-output-section"
-                class="bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2rem] p-10 flex flex-col items-center justify-center text-center min-h-[220px] relative overflow-hidden group hover:bg-white/60 dark:hover:bg-slate-900/60 transition-colors">
+    </main>
 
+    <main id="view-explore" class="hidden pt-[100px] pb-[120px] px-6 max-w-2xl mx-auto space-y-8 animate-[fadeIn_0.3s_ease]">
+        <div class="text-center space-y-2">
+            <h2 class="font-headline font-black text-3xl tracking-tight text-on-surface dark:text-white">Emergency Directory</h2>
+            <p class="font-body text-sm font-medium text-on-surface-variant/70 dark:text-slate-400 px-4">Instant connection to central emergency responders.</p>
+        </div>
+
+        <div class="space-y-4">
+            <!-- Police -->
+            <div class="bg-white/50 dark:bg-slate-900/60 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 rounded-[2rem] shadow-sm flex items-center justify-between group hover:bg-white dark:hover:bg-slate-800 transition-colors">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-[1.2rem] bg-blue-100 dark:bg-blue-900/30 flex justify-center items-center text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 flex-shrink-0">
+                     <span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">local_police</span>
+                    </div>
+                    <div>
+                        <h4 class="font-headline font-bold text-lg text-on-surface dark:text-white leading-tight mb-0.5">Police Control Room</h4>
+                        <p class="text-sm font-bold text-blue-600/70 dark:text-blue-400/80 tracking-wide">Central Dispatch • 100</p>
+                    </div>
+                </div>
+                <a href="tel:100" class="w-12 h-12 flex-shrink-0 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white flex justify-center items-center shadow-lg shadow-blue-500/30 active:scale-95 transition-transform hover:brightness-110">
+                    <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">call</span>
+                </a>
+            </div>
+
+            <!-- Ambulance -->
+            <div class="bg-white/50 dark:bg-slate-900/60 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 rounded-[2rem] shadow-sm flex items-center justify-between group hover:bg-white dark:hover:bg-slate-800 transition-colors">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-[1.2rem] bg-red-100 dark:bg-red-900/30 flex justify-center items-center text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 flex-shrink-0">
+                     <span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">ambulance</span>
+                    </div>
+                    <div>
+                        <h4 class="font-headline font-bold text-lg text-on-surface dark:text-white leading-tight mb-0.5">Medical Emergency</h4>
+                        <p class="text-sm font-bold text-red-600/70 dark:text-red-400/80 tracking-wide">Ambulance Services • 108</p>
+                    </div>
+                </div>
+                <a href="tel:108" class="w-12 h-12 flex-shrink-0 rounded-full bg-gradient-to-br from-red-500 to-red-700 text-white flex justify-center items-center shadow-lg shadow-red-500/30 active:scale-95 transition-transform hover:brightness-110">
+                    <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">call</span>
+                </a>
+            </div>
+
+            <!-- Fire -->
+            <div class="bg-white/50 dark:bg-slate-900/60 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 rounded-[2rem] shadow-sm flex items-center justify-between group hover:bg-white dark:hover:bg-slate-800 transition-colors">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-[1.2rem] bg-orange-100 dark:bg-orange-900/30 flex justify-center items-center text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800/50 flex-shrink-0">
+                     <span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+                    </div>
+                    <div>
+                        <h4 class="font-headline font-bold text-lg text-on-surface dark:text-white leading-tight mb-0.5">Fire Rescue</h4>
+                        <p class="text-sm font-bold text-orange-600/70 dark:text-orange-400/80 tracking-wide">Fire Brigade • 101</p>
+                    </div>
+                </div>
+                <a href="tel:101" class="w-12 h-12 flex-shrink-0 rounded-full bg-gradient-to-br from-orange-500 to-orange-700 text-white flex justify-center items-center shadow-lg shadow-orange-500/30 active:scale-95 transition-transform hover:brightness-110">
+                    <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">call</span>
+                </a>
+            </div>
+            
+            <!-- Women Help -->
+            <div class="bg-white/50 dark:bg-slate-900/60 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 rounded-[2rem] shadow-sm flex items-center justify-between group hover:bg-white dark:hover:bg-slate-800 transition-colors">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-[1.2rem] bg-fuchsia-100 dark:bg-fuchsia-900/30 flex justify-center items-center text-fuchsia-600 dark:text-fuchsia-400 border border-fuchsia-200 dark:border-fuchsia-800/50 flex-shrink-0">
+                     <span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">female</span>
+                    </div>
+                    <div>
+                        <h4 class="font-headline font-bold text-lg text-on-surface dark:text-white leading-tight mb-0.5">Women Helpline</h4>
+                        <p class="text-sm font-bold text-fuchsia-600/70 dark:text-fuchsia-400/80 tracking-wide">Emergency Safety • 1091</p>
+                    </div>
+                </div>
+                <a href="tel:1091" class="w-12 h-12 flex-shrink-0 rounded-full bg-gradient-to-br from-fuchsia-500 to-fuchsia-700 text-white flex justify-center items-center shadow-lg shadow-fuchsia-500/30 active:scale-95 transition-transform hover:brightness-110">
+                    <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">call</span>
+                </a>
+            </div>
+        </div>
+        </div>
+    </main>
+
+    <main id="view-history" class="hidden pt-[100px] pb-[120px] px-6 max-w-2xl mx-auto space-y-8 animate-[fadeIn_0.3s_ease]">
+        <div class="text-center space-y-2 mb-6">
+            <h2 class="font-headline font-black text-3xl tracking-tight text-on-surface dark:text-white">Case History</h2>
+            <p class="font-body text-sm font-medium text-on-surface-variant/70 dark:text-slate-400 px-4">Your securely generated incident reports.</p>
+        </div>
+
+        <div id="draft-list-container" class="space-y-4 flex flex-col">
+            <!-- Empty State -->
+            <div id="draft-empty-state"
+                class="bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2rem] p-10 flex flex-col items-center justify-center text-center min-h-[220px] relative overflow-hidden group hover:bg-white/60 dark:hover:bg-slate-900/60 transition-colors">
                 <div class="absolute inset-0 opacity-50 dark:opacity-20"
                     style="background-image: radial-gradient(var(--tw-gradient-stops));"></div>
-
                 <div
-                    class="w-16 h-16 rounded-[1.2rem] bg-white dark:bg-slate-800 border border-black/5 dark:border-white/5 shadow-sm flex items-center justify-center relative z-10 mb-4 group-hover:scale-110 transition-transform duration-500">
+                    class="w-16 h-16 rounded-[1.2rem] bg-white dark:bg-slate-800 border border-black/5 dark:border-white/5 shadow-sm flex items-center justify-center relative z-10 mb-4 group-hover:scale-110 transition-transform duration-500 mx-auto">
                     <span class="material-symbols-outlined text-primary/40 text-[32px] font-light">article</span>
                 </div>
-
                 <div class="space-y-2 relative z-10">
-                    <p data-lang-key="awaiting"
-                        class="font-extrabold text-[15px] text-on-surface dark:text-white tracking-tight">Awaiting
-                        Generation</p>
-                    <p data-lang-key="awaiting_desc"
-                        class="text-[13px] text-on-surface-variant/70 dark:text-slate-400 max-w-[240px] mx-auto font-medium leading-relaxed">
+                    <p class="font-extrabold text-[15px] text-on-surface dark:text-white tracking-tight">Empty Archive</p>
+                    <p class="text-[13px] text-on-surface-variant/70 dark:text-slate-400 max-w-[240px] mx-auto font-medium leading-relaxed">
                         Your generated incident reports will securely appear here for review and signature.</p>
                 </div>
             </div>
-        </section>
-
+        </div>
     </main>
 
     <!-- Floating Glass NavBar -->
     <nav
         class="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-[90%] max-w-sm bg-white/70 dark:bg-slate-900/80 backdrop-blur-3xl z-50 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-white/80 dark:border-white/10 p-2 flex justify-between items-center transition-colors">
-        <button
-            class="relative w-12 h-12 flex flex-col items-center justify-center bg-gradient-to-br from-primary to-[#b71c1c] text-white rounded-full shadow-lg shadow-primary/30 tap-highlight-none transition-transform active:scale-95 border border-primary-light/20">
+        <button onclick="switchView('view-home'); activateTab(this)"
+            class="tab-btn active relative w-12 h-12 flex flex-col items-center justify-center bg-gradient-to-br from-primary to-[#b71c1c] text-white rounded-full shadow-lg shadow-primary/30 tap-highlight-none transition-transform active:scale-95 border border-primary-light/20">
             <span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">home</span>
         </button>
-        <button
-            class="w-12 h-12 flex flex-col items-center justify-center text-on-surface-variant/60 dark:text-slate-400 hover:text-primary dark:hover:text-primary tap-highlight-none transition-colors">
+        <button onclick="switchView('view-explore'); activateTab(this)"
+            class="tab-btn w-12 h-12 flex flex-col items-center justify-center text-on-surface-variant/60 dark:text-slate-400 hover:text-primary dark:hover:text-primary tap-highlight-none transition-colors">
             <span class="material-symbols-outlined text-[24px]">explore</span>
         </button>
-        <button
-            class="w-12 h-12 flex flex-col items-center justify-center text-on-surface-variant/60 dark:text-slate-400 hover:text-primary dark:hover:text-primary tap-highlight-none transition-colors">
+        <button onclick="switchView('view-history'); activateTab(this)"
+            class="tab-btn w-12 h-12 flex flex-col items-center justify-center text-on-surface-variant/60 dark:text-slate-400 hover:text-primary dark:hover:text-primary tap-highlight-none transition-colors">
             <span class="material-symbols-outlined text-[24px]">history</span>
         </button>
         <button id="theme-toggle"
@@ -415,6 +509,150 @@
     </nav>
 
     <!-- Modals -->
+
+    <!-- Sidebar Menu -->
+    <div id="sidebar-menu" class="fixed inset-0 z-[120] sidebar-hidden transition-all duration-300">
+        <div class="absolute inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm cursor-pointer sidebar-backdrop transition-opacity duration-300"
+            onclick="document.getElementById('sidebar-menu').classList.add('sidebar-hidden'); document.getElementById('sidebar-menu').classList.remove('sidebar-active');"></div>
+        <div class="absolute top-0 left-0 w-72 h-full bg-surface dark:bg-slate-900 shadow-2xl sidebar-pane transition-transform duration-300 flex flex-col border-r border-black/5 dark:border-white/5">
+            <!-- Header -->
+            <div class="p-6 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-white/50 dark:bg-slate-800/50 backdrop-blur-md">
+                <div class="flex items-center gap-2">
+                    <div class="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-primary-light/50 to-primary/20 text-primary shadow-inner">
+                        <span class="material-symbols-outlined text-[18px]">health_and_safety</span>
+                    </div>
+                    <h2 class="font-headline font-black text-lg tracking-tight text-primary">Sankat Sahayak</h2>
+                </div>
+                <button onclick="document.getElementById('sidebar-menu').classList.add('sidebar-hidden'); document.getElementById('sidebar-menu').classList.remove('sidebar-active');"
+                    class="w-8 h-8 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors text-on-surface dark:text-white">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+            </div>
+            
+            <!-- Menu Items -->
+            <div class="flex-grow py-4 overflow-y-auto space-y-4">
+                <div class="px-4">
+                    <div class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/50 dark:text-slate-500 mb-2 px-2">Account</div>
+                    <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all text-on-surface dark:text-slate-200 font-bold text-sm text-left">
+                        <span class="material-symbols-outlined text-[20px] text-primary">account_circle</span>
+                        User Profile
+                    </button>
+                    <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all text-on-surface dark:text-slate-200 font-bold text-sm text-left">
+                        <span class="material-symbols-outlined text-[20px] text-primary">manage_accounts</span>
+                        Account Settings
+                    </button>
+                </div>
+                
+                <div class="px-4 pt-4 border-t border-black/5 dark:border-white/5">
+                    <div class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/50 dark:text-slate-500 mb-2 px-2">Application</div>
+                    <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all text-on-surface dark:text-slate-200 font-bold text-sm text-left">
+                        <span class="material-symbols-outlined text-[20px] text-primary">settings</span>
+                        App Settings
+                    </button>
+                    <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all text-on-surface dark:text-slate-200 font-bold text-sm text-left">
+                        <span class="material-symbols-outlined text-[20px] text-primary">help</span>
+                        Help & Support
+                    </button>
+                </div>
+
+                <div class="px-4 pt-4 border-t border-black/5 dark:border-white/5">
+                    <div class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/50 dark:text-slate-500 mb-2 px-2">Legal</div>
+                    <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all text-on-surface dark:text-slate-200 font-bold text-sm text-left">
+                        <span class="material-symbols-outlined text-[20px] text-primary">policy</span>
+                        Legal & Privacy Policies
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-6 border-t border-black/5 dark:border-white/5 bg-white/30 dark:bg-slate-800/30">
+                <button class="w-full bg-red-500/10 text-red-600 dark:text-red-400 font-bold py-3 rounded-xl hover:bg-red-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">logout</span>
+                    Sign Out
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile & Medical ID Modal -->
+    <div id="profile-modal"
+        class="fixed inset-0 z-[100] modal-hidden transition-all duration-300 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-md cursor-pointer"
+            onclick="closeModal('profile-modal')"></div>
+        <div
+            class="relative w-full max-w-sm bg-surface dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/20 dark:border-white/10 flex flex-col items-center p-8 text-center">
+            
+            <button onclick="closeModal('profile-modal')"
+                class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors text-on-surface dark:text-white">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+
+            <!-- Profile Image -->
+            <div class="h-24 w-24 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center overflow-hidden shadow-lg border-4 border-white/80 dark:border-white/20 ring-4 ring-primary/20 mb-4 inline-block">
+                <img alt="User" class="h-full w-full object-cover"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAo2ef69w10rnodsixAHQBUzeV1VCp9tTRKl7XlRF1osAk2Kx7n4zn_yMrmaCE5zECVk3FlP_1R2wENgJRU1nDQmczxSmfq_ZkghIQ_V-Lo9EeLKYQQIX8zJGVQjjD6XfcffX_jPM97hPp37S4guxzgl55EZ4WwcfoPdtxHdDStcoDiaPDbnXliaUi1F_IOsgJ7ThnqEEG5GWaPvKH7N_iqnFWax4F9-DXr4MgLFvnWlydZnHy8q_YhWC2yvfU8A-8yJ59T1OMANNYX" />
+            </div>
+
+            <!-- Name and Basics -->
+            <h3 class="font-headline font-black text-2xl text-on-surface dark:text-white tracking-tight leading-none mb-1">Rohan M.</h3>
+            <p class="font-body text-sm font-bold tracking-widest uppercase text-on-surface-variant/60 dark:text-slate-400 mb-6">28 YRS • MALE</p>
+
+            <div class="w-full bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-black/5 dark:border-white/5 p-4 text-left space-y-4 shadow-sm mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0 text-red-600 dark:text-red-400">
+                        <span class="material-symbols-outlined text-[20px]">bloodtype</span>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/50 dark:text-slate-500 mb-0.5">Blood Group</div>
+                        <div class="font-headline font-black text-lg text-primary tracking-tight leading-none">O POSITIVE (O+)</div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3 border-t border-black/5 dark:border-white/5 pt-4">
+                    <div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0 text-orange-600 dark:text-orange-400">
+                        <span class="material-symbols-outlined text-[20px]">medical_information</span>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/50 dark:text-slate-500 mb-0.5">Allergies / Conditions</div>
+                        <div class="font-bold text-sm text-on-surface dark:text-slate-200 tracking-tight leading-snug">Penicillin<br/>Asthma (Mild)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emergency Contact -->
+            <div class="w-full border-2 border-primary/20 dark:border-primary/40 bg-primary/5 rounded-2xl p-4 flex flex-col items-center">
+                <div class="text-[10px] font-bold uppercase tracking-widest text-primary/70 mb-1">Emergency Contact</div>
+                <div class="font-headline font-black text-lg text-on-surface dark:text-white tracking-tight leading-none mb-1">Sneha (Wife)</div>
+                <div class="font-mono text-sm font-bold tracking-widest text-primary">+91 98765 43210</div>
+                <button class="mt-3 w-full bg-primary text-white font-bold py-2 rounded-xl active:scale-95 transition-transform flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">call</span>
+                    Dial Now
+                </button>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- SOS Countdown Modal -->
+    <div id="sos-countdown-modal"
+        class="fixed inset-0 z-[110] modal-hidden transition-all duration-300 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-md"></div>
+        
+        <div id="sos-flash-card" class="relative w-full max-w-md bg-red-600 rounded-[2.5rem] shadow-[0_0_80px_rgba(220,38,38,0.6)] border-[6px] border-red-400 p-10 flex flex-col items-center justify-center gap-6 text-center z-10 transition-colors animate-[pulse_1s_ease-in-out_infinite]">
+            <span class="material-symbols-outlined text-white text-[80px] drop-shadow-md" style="font-variation-settings: 'FILL' 1;">warning</span>
+            
+            <div class="space-y-1">
+                <h2 class="text-white font-headline font-black text-3xl tracking-tighter uppercase leading-tight drop-shadow-sm">Emergency SOS</h2>
+                <p class="text-red-100 font-body font-bold tracking-widest text-sm uppercase mt-2">Dispatching in</p>
+                <div id="sos-modal-timer" class="text-white font-headline font-black text-8xl tabular-nums drop-shadow-xl mt-4">15</div>
+            </div>
+            
+            <button id="cancel-sos-btn"
+                class="mt-8 bg-white text-red-700 font-headline font-black tracking-widest text-2xl uppercase px-10 py-5 rounded-full shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-transform w-full border-b-[6px] border-gray-300 flex items-center justify-center gap-3">
+                <span class="material-symbols-outlined text-[32px] font-bold">cancel</span>
+                Stop
+            </button>
+        </div>
+    </div>
 
     <!-- Map Modal -->
     <div id="map-modal"
@@ -436,7 +674,7 @@
                 </button>
             </div>
             <div class="relative flex-grow bg-gray-200 dark:bg-slate-800">
-                <iframe width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0"
+                <iframe id="map-iframe" width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0"
                     src="https://maps.google.com/maps?q=Mumbai,India&t=k&z=17&ie=UTF8&iwloc=&output=embed"
                     style="filter: contrast(1.2) brightness(0.9);"></iframe>
                 <div class="crosshair"></div>
@@ -445,11 +683,10 @@
                     <div
                         class="bg-black/80 backdrop-blur-md border border-white/10 p-4 rounded-2xl flex flex-col items-start gap-1 shadow-2xl">
                         <div class="text-white/50 text-[10px] font-bold uppercase tracking-widest">GPS Telemetry</div>
-                        <div class="text-green-400 font-mono text-[13px] tracking-wide mt-1">LAT: 19.0760° N<br />LNG:
+                        <div id="gps-telemetry" class="text-green-400 font-mono text-[13px] tracking-wide mt-1">LAT: 19.0760° N<br />LNG:
                             72.8777° E</div>
                         <div class="text-white font-medium text-xs mt-2 pt-2 border-t border-white/10 w-full">Accuracy:
-                            <span class="text-primary font-bold">±3 Meters</span>
-                        </div>
+                            <span id="gps-accuracy" class="text-primary font-bold">±3 Meters</span></div>
                     </div>
                 </div>
             </div>
@@ -499,11 +736,10 @@
     <div id="camera-modal"
         class="fixed inset-0 z-[100] modal-hidden transition-all duration-300 flex items-center justify-center bg-black">
         <div class="relative w-full h-full flex flex-col justify-between">
-            <!-- Simulated Camera Feed Background -->
-            <div class="absolute inset-0 bg-slate-900 bg-opacity-90 overflow-hidden flex items-center justify-center">
-                <div
-                    class="w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-700 via-slate-900 to-black opacity-80">
-                </div>
+            <!-- Real Camera Feed Background -->
+            <div class="absolute inset-0 bg-black overflow-hidden flex items-center justify-center">
+                <video id="real-camera-feed" class="absolute inset-0 w-full h-full object-cover" autoplay playsinline></video>
+                
                 <!-- Viewfinder Brackets -->
                 <div
                     class="absolute top-[20%] left-[10%] w-12 h-12 border-t-[3px] border-l-[3px] border-primary rounded-tl-xl opacity-70">
@@ -517,7 +753,7 @@
                 <div
                     class="absolute bottom-[20%] right-[10%] w-12 h-12 border-b-[3px] border-r-[3px] border-primary rounded-br-xl opacity-70">
                 </div>
-                <div class="absolute text-white/50 text-xs font-mono font-bold tracking-widest bottom-32 uppercase">Hold
+                <div class="absolute text-white/50 text-xs font-mono font-bold tracking-widest bottom-32 uppercase z-10 drop-shadow-md">Hold
                     steady</div>
             </div>
 
@@ -533,12 +769,9 @@
                     <span class="material-symbols-outlined text-[24px]">close</span>
                 </button>
                 <div class="flex gap-4">
-                    <button
-                        class="text-white drop-shadow-md w-10 h-10 flex items-center justify-center bg-black/20 rounded-full hover:bg-black/40"><span
-                            class="material-symbols-outlined">flash_auto</span></button>
-                    <button
-                        class="text-white drop-shadow-md w-10 h-10 flex items-center justify-center bg-black/20 rounded-full hover:bg-black/40"><span
-                            class="material-symbols-outlined">settings</span></button>
+                    <button id="cam-flash-toggle" onclick="toggleCameraFlash()"
+                        class="text-white drop-shadow-md w-10 h-10 flex items-center justify-center bg-black/40 rounded-full hover:bg-black/60"><span
+                            class="material-symbols-outlined font-light" id="cam-flash-icon">flash_off</span></button>
                 </div>
             </div>
 
@@ -551,8 +784,8 @@
                     </div>
                 </button>
 
-                <button
-                    class="absolute right-10 text-white drop-shadow-md bg-black/30 w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md hover:bg-black/50">
+                <button onclick="switchCameraFacing()"
+                    class="absolute right-10 text-white drop-shadow-md bg-black/40 w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md hover:bg-black/60 active:scale-95 transition-transform">
                     <span class="material-symbols-outlined">cameraswitch</span>
                 </button>
             </div>
@@ -564,14 +797,14 @@
         const translations = {
             "en": {
                 "hero_title_1": "Emergency", "hero_title_2": "Reporting.", "location": "LOCATION VERIFIED",
-                "sos": "SOS", "sos_text": "Hold to activate", "journal_title": "Incident Journal",
+                "sos": "SOS", "sos_text": "Tap to activate", "journal_title": "Incident Journal",
                 "live": "Live", "journal_ph": "Describe the sequence of events clearly (e.g., at 10:30 AM, a collision occurred near...)",
                 "submit": "Submit", "generate": "Generate Official FIR", "draft_archive": "Drafts Archive",
                 "awaiting": "Awaiting Generation", "awaiting_desc": "Your generated incident reports will securely appear here for review and signature."
             },
             "hi": {
                 "hero_title_1": "आपातकालीन", "hero_title_2": "रिपोर्टिंग।", "location": "स्थान सत्यापित",
-                "sos": "एसओएस", "sos_text": "सक्रिय करने के लिए दबाए रखें", "journal_title": "घटना विवरण",
+                "sos": "एसओएस", "sos_text": "सक्रिय करने के लिए टैप करें", "journal_title": "घटना विवरण",
                 "live": "लाइव", "journal_ph": "घटनाक्रम का स्पष्ट रूप से वर्णन करें (जैसे, सुबह 10:30 बजे, ... के पास टक्कर हुई)",
                 "submit": "जमा करें", "generate": "आधिकारिक एफआईआर बनाएं", "draft_archive": "ड्राफ्ट संग्रह",
                 "awaiting": "जनरेशन की प्रतीक्षा है", "awaiting_desc": "आपके जेनरेट किए गए घटना विवरण समीक्षा और हस्ताक्षर के लिए यहां सुरक्षित रूप से दिखाई देंगे।"
@@ -602,7 +835,24 @@
                 enBtn.className = "text-left px-5 py-3.5 text-sm font-bold text-primary bg-primary/5 hover:bg-primary/10 transition-colors flex items-center justify-between";
                 enBtn.innerHTML = `English ${checkIcon}`;
             }
+            
+            // Close the dropdown after selection
+            const popupMenu = document.getElementById('lang-popup-menu');
+            if(popupMenu) {
+                popupMenu.classList.remove('modal-active');
+                popupMenu.classList.add('modal-hidden');
+            }
         }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            const wrapper = document.getElementById('lang-dropdown-wrapper');
+            const popup = document.getElementById('lang-popup-menu');
+            if (wrapper && popup && !wrapper.contains(e.target)) {
+                popup.classList.remove('modal-active');
+                popup.classList.add('modal-hidden');
+            }
+        });
 
         // Dark Mode Toggle
         const themeToggle = document.getElementById('theme-toggle');
@@ -618,12 +868,24 @@
             document.getElementById(id).classList.remove('modal-hidden');
             document.getElementById(id).classList.add('modal-active');
             if (id === 'voice-modal') startTranscription();
+            if (id === 'camera-modal') initCamera();
         }
 
         function closeModal(id) {
             document.getElementById(id).classList.remove('modal-active');
             document.getElementById(id).classList.add('modal-hidden');
             if (id === 'voice-modal') stopTranscription();
+            if (id === 'camera-modal') stopCamera();
+        }
+
+        function switchView(viewId) {
+            window.scrollTo({top:0});
+            document.getElementById('view-home').classList.add('hidden');
+            document.getElementById('view-explore').classList.add('hidden');
+            const viewHistory = document.getElementById('view-history');
+            if (viewHistory) viewHistory.classList.add('hidden');
+            
+            document.getElementById(viewId).classList.remove('hidden');
         }
 
         // ── Voice Input (Web Speech API) ──────────────────────────────────────
@@ -646,7 +908,7 @@
             }
 
             recognition = new SpeechRecognition();
-            recognition.lang = 'en-IN';   // supports en-IN and hi-IN
+            recognition.lang = 'en-IN'; // supports en-IN and hi-IN
             recognition.continuous = true;
             recognition.interimResults = true;
 
@@ -656,8 +918,10 @@
 
             recognition.onstart = () => {
                 isListening = true;
-                micIcon.innerText = 'mic_off';
-                micIcon.style.color = '#d32f2f';
+                if (micIcon) {
+                    micIcon.innerText = 'mic_off';
+                    micIcon.style.color = '#d32f2f';
+                }
             };
 
             recognition.onresult = (event) => {
@@ -678,7 +942,6 @@
             };
 
             recognition.onend = () => stopVoiceInput();
-
             recognition.start();
         }
 
@@ -695,105 +958,69 @@
             }
         }
 
-        // Keep modal voice button working (opens modal & starts recognition)
-        function startTranscription() { /* no-op – modal kept for UI only */ }
+        function startTranscription() {}
         function stopTranscription() { stopVoiceInput(); }
 
-        // ── Generate FIR ──────────────────────────────────────────────────────
-        let currentLang = 'english';
-        let lastData = null;
+        let currentStream = null;
+        let currentFacingMode = 'environment';
+        let isFlashOn = false;
 
-        async function generateFIR() {
-            const textarea = document.getElementById('main-textarea');
-            const text = textarea.value.trim();
-
-            if (!text) {
-                alert('Please describe the incident before generating a FIR.');
-                return;
-            }
-
-            const btn = document.getElementById('generate-fir-btn');
-            btn.disabled = true;
-            btn.style.opacity = '0.6';
-            btn.querySelector('span[data-lang-key]').innerText = 'Generating…';
-
+        async function initCamera() {
+            if (currentStream) stopCamera();
+            const constraints = {
+                video: { facingMode: currentFacingMode }
+            };
             try {
-                const resp = await fetch('https://sankat-sahayak-backend.onrender.com/generate-fir', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ description: text })
-                });
-
-                if (!resp.ok) throw new Error(`Server error: ${resp.status}`);
-
-                const data = await resp.json();
-                currentLang = 'english';   // reset to English for each new generation
-                displayFIR(data);
+                currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+                const videoEl = document.getElementById('real-camera-feed');
+                videoEl.srcObject = currentStream;
+                applyFlashConstraint();
             } catch (err) {
-                alert('Failed to generate FIR: ' + err.message);
-            } finally {
-                btn.disabled = false;
-                btn.style.opacity = '';
-                btn.querySelector('span[data-lang-key]').innerText = 'Generate Official FIR';
+                console.error("Camera error:", err);
+                alert("Camera access denied. Please check site permissions.");
             }
         }
 
-        function displayFIR(data) {
-            lastData = data;
-            renderFIR();
+        function stopCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
         }
 
-        function toggleLanguage() {
-            currentLang = currentLang === 'english' ? 'hindi' : 'english';
-            renderFIR();
+        function switchCameraFacing() {
+            currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+            initCamera();
         }
 
-        function renderFIR() {
-            if (!lastData) return;
-
-            const isEnglish = currentLang === 'english';
-            const firText = isEnglish
-                ? (lastData.fir_english || lastData.fir || JSON.stringify(lastData))
-                : (lastData.fir_hindi || lastData.fir || JSON.stringify(lastData));
-            const langLabel = isEnglish ? 'English' : 'हिंदी';
-            const btnLabel = isEnglish ? 'Switch to हिंदी' : 'Switch to English';
-
-            // Format: convert " - " separators into bullet points on new lines
-            const formatted = firText.replace(/ - /g, "\n• ");
-
-            const section = document.getElementById('fir-output-section');
-            section.innerHTML = `
-                <div class="w-full text-left space-y-4 relative z-10">
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="material-symbols-outlined text-primary text-[22px]" style="font-variation-settings:'FILL' 1">description</span>
-                        <span class="font-headline font-extrabold text-[15px] text-on-surface dark:text-white tracking-tight">Generated FIR (${langLabel})</span>
-                        <span class="ml-auto text-[10px] font-bold text-primary/70 uppercase tracking-widest bg-primary/10 px-2 py-0.5 rounded-full">Official</span>
-                    </div>
-                    <button onclick="toggleLanguage()" class="flex items-center gap-1.5 text-xs font-bold text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 px-3 py-1.5 rounded-full transition-colors">
-                        <span class="material-symbols-outlined text-[16px]">translate</span> ${btnLabel}
-                    </button>
-                    <pre class="whitespace-pre-wrap text-sm bg-white dark:bg-slate-800 p-4 rounded-2xl shadow border border-black/5 dark:border-white/10 font-body leading-relaxed text-on-surface dark:text-slate-200 overflow-auto max-h-[500px]">${escapeHtml(formatted)}</pre>
-                    <button onclick="copyFIR(this)" class="flex items-center gap-1.5 text-xs font-bold text-primary hover:underline mt-1">
-                        <span class="material-symbols-outlined text-[16px]">content_copy</span> Copy FIR
-                    </button>
-                </div>
-            `;
-            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        async function toggleCameraFlash() {
+            isFlashOn = !isFlashOn;
+            document.getElementById('cam-flash-icon').innerText = isFlashOn ? 'flash_on' : 'flash_off';
+            applyFlashConstraint();
         }
 
-        function escapeHtml(str) {
-            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-        }
-
-        function copyFIR(btn) {
-            const pre = btn.closest('div').querySelector('pre');
-            navigator.clipboard.writeText(pre.innerText).then(() => {
-                btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">check</span> Copied!';
-                setTimeout(() => { btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">content_copy</span> Copy FIR'; }, 2000);
-            });
+        async function applyFlashConstraint() {
+            if (!currentStream) return;
+            const track = currentStream.getVideoTracks()[0];
+            const capabilities = track.getCapabilities && track.getCapabilities() || {};
+            if (capabilities.torch) {
+                try {
+                    await track.applyConstraints({
+                        advanced: [{ torch: isFlashOn }]
+                    });
+                } catch(e) { console.error("Flash unsupported:", e); }
+            }
         }
 
         function simulatePhotoCapture() {
+            const videoEl = document.getElementById('real-camera-feed');
+            if (currentStream && videoEl.videoWidth) {
+                const canvas = document.createElement('canvas');
+                canvas.width = videoEl.videoWidth;
+                canvas.height = videoEl.videoHeight;
+                canvas.getContext('2d').drawImage(videoEl, 0, 0);
+            }
+
             const flash = document.getElementById('camera-flash');
             flash.style.transitionDuration = '50ms';
             flash.style.opacity = '1';
@@ -804,6 +1031,15 @@
 
                 setTimeout(() => {
                     closeModal('camera-modal');
+                    
+                    const uploadIcon = document.querySelector('.upload-icon');
+                    const uploadText = document.querySelector('.upload-text');
+                    if(uploadIcon) {
+                        uploadIcon.innerText='check_circle';
+                        uploadIcon.classList.add('text-green-400');
+                    }
+                    if(uploadText) uploadText.innerText = 'Media Added';
+                    
                     const textAreaEl = document.getElementById('main-textarea');
                     if (!textAreaEl.value.includes("[Photo Attached: evidence.jpg]")) {
                         const prefix = textAreaEl.value.trim() === "" ? "" : "\n\n";
@@ -812,6 +1048,332 @@
                 }, 300);
             }, 100);
         }
+
+        // --- SOS Button Logic ---
+        const sosBtn = document.getElementById('sos-trigger-btn');
+        const sosHint = document.getElementById('sos-hint-text');
+        const sosTextSpan = sosBtn.querySelector('[data-lang-key="sos"]');
+        let countdownTimer;
+        let isSOSPending = false;
+        let secondsLeft = 15;
+
+        const triggerSOSBackend = async () => {
+            try {
+                // Determine API endpoint based on current URL to handle production vs local test
+                const apiBase = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+                    ? "http://localhost:3000" 
+                    : "http://localhost:3000"; // Can be updated for production domain
+
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(async (position) => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        
+                        try {
+                            const response = await fetch(`${apiBase}/trigger-sos`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ latitude: lat, longitude: lng, timestamp: new Date().toISOString() })
+                            });
+                            
+                            const data = await response.json();
+                            alert(`🚨 SOS ALERT SENT SUCCESSFULLY!\n\nBackend Message: ${data.message}`);
+                        } catch (err) {
+                            console.error('Failed to notify backend:', err);
+                            alert('🚨 SOS triggered locally. Ensure backend server is running on port 3000.');
+                        }
+                    }, (error) => {
+                        console.error('Location error', error);
+                        alert('🚨 SOS triggered! Please enable browser location access so emergency services know where you are.');
+                    });
+                } else {
+                    alert('🚨 SOS triggered locally. Geolocation is not supported by your browser.');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        const handleSOSTap = (e) => {
+            if (isSOSPending) return; // Ignore if already pending and showing modal
+
+            // Start SOS Countdown
+            isSOSPending = true;
+            secondsLeft = 15;
+            const modalTimer = document.getElementById('sos-modal-timer');
+            modalTimer.innerText = secondsLeft;
+            
+            // Open full screen modal
+            openModal('sos-countdown-modal');
+
+            countdownTimer = setInterval(() => {
+                secondsLeft--;
+                
+                // Vibrate for 200ms
+                if ("vibrate" in navigator) {
+                    navigator.vibrate(200);
+                }
+                
+                // Flash the card background between red-600 and super bright red
+                const flashCard = document.getElementById('sos-flash-card');
+                if (flashCard) {
+                    if (secondsLeft % 2 === 0) {
+                        flashCard.classList.remove('bg-red-600');
+                        flashCard.classList.add('bg-[#ff0000]'); // Brighter red
+                    } else {
+                        flashCard.classList.remove('bg-[#ff0000]');
+                        flashCard.classList.add('bg-red-600'); 
+                    }
+                }
+
+                if (secondsLeft > 0) {
+                    modalTimer.innerText = secondsLeft;
+                } else {
+                    clearInterval(countdownTimer);
+                    isSOSPending = false;
+                    if ("vibrate" in navigator) navigator.vibrate(0);
+                    
+                    closeModal('sos-countdown-modal');
+                    triggerSOSBackend();
+                }
+            }, 1000);
+        };
+
+        const stopSOSTimer = () => {
+            if (isSOSPending) {
+                isSOSPending = false;
+                clearInterval(countdownTimer);
+                if ("vibrate" in navigator) navigator.vibrate(0);
+                closeModal('sos-countdown-modal');
+            }
+        };
+
+        document.getElementById('cancel-sos-btn').addEventListener('click', stopSOSTimer);
+
+        if (sosBtn) {
+            sosBtn.addEventListener("click", handleSOSTap);
+        }
+
+        function activateTab(clickedBtn) {
+            const tabs = document.querySelectorAll('.tab-btn');
+            tabs.forEach(btn => {
+                btn.className = "tab-btn w-12 h-12 flex flex-col items-center justify-center text-on-surface-variant/60 dark:text-slate-400 hover:text-primary dark:hover:text-primary tap-highlight-none transition-colors";
+                const span = btn.querySelector('span');
+                if(span) span.style.fontVariationSettings = "'FILL' 0";
+            });
+            clickedBtn.className = "tab-btn active relative w-12 h-12 flex flex-col items-center justify-center bg-gradient-to-br from-primary to-[#b71c1c] text-white rounded-full shadow-lg shadow-primary/30 tap-highlight-none transition-transform active:scale-95 border border-primary-light/20";
+            const clickedSpan = clickedBtn.querySelector('span');
+            if(clickedSpan) clickedSpan.style.fontVariationSettings = "'FILL' 1";
+        }
+
+        // Live Geolocation Tracking
+        const initLocationTracking = () => {
+            const locationTextSpan = document.querySelector('[data-lang-key="location"]');
+            if(locationTextSpan) locationTextSpan.innerText = "LOCATING...";
+
+            // Check if Geolocation is supported
+            if ("geolocation" in navigator) {
+                // Fetch actual device coordinates
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const accuracy = position.coords.accuracy;
+
+                    try {
+                        // Reverse Geocode the coordinates into a neighborhood/city string via free API
+                        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+                        const data = await response.json();
+                        
+                        let locationName = "LOCATION VERIFIED";
+                        if(data && data.display_name) {
+                            // Extract the first 4 parts of the full street address to be highly detailed but avoid Country/ZIP
+                            const parts = data.display_name.split(',').map(s => s.trim());
+                            locationName = parts.slice(0, 4).join(', ').toUpperCase();
+                        }
+                        
+                        // Update UI Header Location String
+                        if(locationTextSpan) locationTextSpan.innerText = locationName;
+
+                        // Update Modal Map iframe
+                        const mapIframe = document.getElementById('map-iframe');
+                        if (mapIframe) {
+                            mapIframe.src = `https://maps.google.com/maps?q=${lat},${lng}&t=k&z=17&ie=UTF8&iwloc=&output=embed`;
+                        }
+
+                        // Update Modal Telemetry HUD
+                        const telemetryBox = document.getElementById('gps-telemetry');
+                        if(telemetryBox) telemetryBox.innerHTML = `LAT: ${lat.toFixed(4)}° N<br />LNG: ${lng.toFixed(4)}° E`;
+                        
+                        const accuracySpan = document.getElementById('gps-accuracy');
+                        if(accuracySpan) accuracySpan.innerText = `±${Math.round(accuracy)} Meters`;
+
+                    } catch(err) {
+                        console.error('Reverse Geocoding failed', err);
+                        // Fallback text if reverse routing fails
+                        if(locationTextSpan) locationTextSpan.innerText = "LOCATION LOGGED";
+                    }
+                }, (error) => {
+                    console.error('Location error', error);
+                    // Denied permission or error text
+                    if(locationTextSpan) locationTextSpan.innerText = "GPS OFF";
+                }, { enableHighAccuracy: true });
+            } else {
+                if(locationTextSpan) locationTextSpan.innerText = "LOCATION UNAVAILABLE";
+            }
+        };
+
+        // Initialize GPS routine automatically on page load
+        window.addEventListener('DOMContentLoaded', initLocationTracking);
+
+        // --- FIR Generation Integration ---
+        async function generateFIR() {
+            const btn = document.getElementById('generate-fir-btn');
+            const icon = document.getElementById('generate-icon');
+            const textEl = document.getElementById('generate-text');
+            const textArea = document.getElementById('main-textarea');
+            const description = textArea.value.trim();
+
+            if (!description) {
+                alert("Please describe the incident in the journal first.");
+                return;
+            }
+
+            // UI Loading state
+            btn.disabled = true;
+            btn.classList.add('opacity-70', 'cursor-not-allowed');
+            icon.innerText = "sync";
+            icon.classList.add('animate-spin');
+            textEl.innerText = "Drafting Report...";
+
+            try {
+                const response = await fetch('https://sankat-sahayak-backend.onrender.com/generate-fir', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ description })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Show result on home screen inline
+                    const homeResult = document.getElementById('home-fir-result');
+                    homeResult.classList.remove('hidden');
+                    homeResult.innerHTML = `
+                        <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-black/5 dark:border-white/10 relative overflow-hidden group">
+                            <div class="flex items-center justify-between mb-4 border-b border-black/5 dark:border-white/5 pb-3">
+                                <h4 class="font-headline font-black text-lg text-green-600 dark:text-green-400 tracking-tight flex items-center gap-2"><span class="material-symbols-outlined text-[20px]">check_circle</span> Generated FIR</h4>
+                                <button onclick="this.parentElement.parentElement.parentElement.classList.add('hidden')" class="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex justify-center items-center text-on-surface dark:text-white hover:bg-black/10 dark:hover:bg-white/20 transition-colors"><span class="material-symbols-outlined text-[18px]">close</span></button>
+                            </div>
+                            <div class="prose prose-sm dark:prose-invert max-w-none font-medium leading-relaxed whitespace-pre-wrap max-h-[40vh] overflow-y-auto mb-5 custom-scrollbar pr-2 pb-2 text-on-surface dark:text-slate-200">
+                                ${data.fir_english}
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="downloadFIRAsPDF(event, \`${data.fir_english.replace(/`/g, '\\`')}\`)" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold uppercase tracking-widest text-[13px] active:scale-95 transition-all flex justify-center items-center gap-2 shadow-lg shadow-blue-600/30">
+                                    <span class="material-symbols-outlined text-[20px]">picture_as_pdf</span> Download FIR as PDF
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    // Push card silently to History archive
+                    renderFIRCard(data.fir_english, data.fir_hindi);
+                } else {
+                    alert("Error generating FIR: " + (data.error || "Unknown error"));
+                }
+            } catch (err) {
+                console.error("Fetch failed", err);
+                alert("Could not connect to the Backend AI Server. Make sure localhost:3000 is running.");
+            } finally {
+                // UI Restore state
+                btn.disabled = false;
+                btn.classList.remove('opacity-70', 'cursor-not-allowed');
+                icon.innerText = "bolt";
+                icon.classList.remove('animate-spin');
+                textEl.innerText = "Generate Official FIR";
+            }
+        }
+
+        function renderFIRCard(textEn, textHi) {
+            const container = document.getElementById('draft-list-container');
+            const emptyState = document.getElementById('draft-empty-state');
+            if (emptyState) emptyState.style.display = 'none';
+
+            // Create Card
+            const card = document.createElement('div');
+            card.className = "bg-white dark:bg-slate-800 rounded-3xl p-6 border border-black/5 dark:border-white/10 shadow-lg relative overflow-hidden group slide-in-top mb-4";
+            
+            // Generate clean date string
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) + " • " + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const previewText = textEn.replace(/\n/g, " ").substring(0, 100) + "...";
+
+            card.innerHTML = `
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400">
+                            <span class="material-symbols-outlined">description</span>
+                        </div>
+                        <div>
+                            <div class="font-headline font-bold text-on-surface dark:text-white leading-tight">Formal FIR Draft</div>
+                            <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">${dateStr}</div>
+                        </div>
+                    </div>
+                    <span class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border border-green-200 dark:border-green-800/60 shadow-sm flex items-center gap-1"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>Ready</span>
+                </div>
+                <div class="bg-black/5 dark:bg-white/5 p-4 rounded-xl border border-black/5 dark:border-white/5 mb-5 relative group-hover:bg-black/10 dark:group-hover:bg-white/10 transition-colors">
+                  <p class="text-[13px] font-medium text-on-surface-variant dark:text-slate-300 line-clamp-3 leading-relaxed">${previewText}</p>
+                </div>
+                <div class="flex gap-2">
+                                <button class="flex-1 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 active:scale-95 text-on-surface dark:text-white py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all flex justify-center items-center gap-2 border border-black/5 dark:border-white/5">
+                                    <span class="material-symbols-outlined text-[18px]">visibility</span> View Full 
+                                </button>
+                                <button onclick="downloadFIRAsPDF(event, \`${textEn.replace(/`/g, '\\`')}\`)" class="w-12 h-12 flex border border-black/10 dark:border-white/10 justify-center items-center rounded-xl bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-all shadow-sm text-blue-600 dark:text-blue-400">
+                                    <span class="material-symbols-outlined text-[20px]">picture_as_pdf</span>
+                                </button>
+                            </div>
+            `;
+            
+            // Insert at top inside list container
+            container.insertBefore(card, container.firstChild);
+        }
+
+        function downloadFIRAsPDF(event, textContent) {
+            const btn = event.currentTarget;
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = `<span class="material-symbols-outlined text-[20px] animate-spin">sync</span> Downloading...`;
+            btn.disabled = true;
+            
+            const printElement = document.createElement('div');
+            printElement.style.padding = "40px";
+            printElement.style.fontFamily = "sans-serif";
+            printElement.style.color = "#000";
+            printElement.style.backgroundColor = "#fff";
+            printElement.innerHTML = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h1 style="color: #d32f2f; font-size: 24px; margin:0;">Official Incident Report (FIR)</h1>
+                    <p style="color: #666; font-size: 12px; margin-top:5px;">Generated securely via Sankat Sahayak System</p>
+                </div>
+                <hr style="border: 1px solid #eee; margin-bottom: 20px;" />
+                <div style="white-space: pre-wrap; font-size: 14px; line-height: 1.6; text-align: left;">${textContent}</div>
+                <div style="margin-top: 40px; text-align: center; font-size: 10px; color: #999;">
+                    <p>Document Timestamp: ${new Date().toLocaleString()}</p>
+                    <p>Electronically Generated Document. Valid for preliminary reporting.</p>
+                </div>
+            `;
+            
+            html2pdf().set({
+                margin: 15,
+                filename: 'Sankat_Sahayak_FIR_' + Date.now() + '.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            }).from(printElement).save().then(() => {
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            });
+        }
+
     </script>
 </body>
 
