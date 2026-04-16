@@ -758,6 +758,9 @@
             const langLabel = isEnglish ? 'English' : 'हिंदी';
             const btnLabel = isEnglish ? 'Switch to हिंदी' : 'Switch to English';
 
+            // Format: convert " - " separators into bullet points on new lines
+            const formatted = firText.replace(/ - /g, "\n• ");
+
             const section = document.getElementById('fir-output-section');
             section.innerHTML = `
                 <div class="w-full text-left space-y-4 relative z-10">
@@ -769,7 +772,7 @@
                     <button onclick="toggleLanguage()" class="flex items-center gap-1.5 text-xs font-bold text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 px-3 py-1.5 rounded-full transition-colors">
                         <span class="material-symbols-outlined text-[16px]">translate</span> ${btnLabel}
                     </button>
-                    <pre class="whitespace-pre-wrap font-body text-[13px] leading-relaxed text-on-surface dark:text-slate-200 bg-white/60 dark:bg-slate-800/60 rounded-2xl p-5 border border-black/5 dark:border-white/10 shadow-inner overflow-auto max-h-[500px]">${escapeHtml(firText)}</pre>
+                    <pre class="whitespace-pre-wrap text-sm bg-white dark:bg-slate-800 p-4 rounded-2xl shadow border border-black/5 dark:border-white/10 font-body leading-relaxed text-on-surface dark:text-slate-200 overflow-auto max-h-[500px]">${escapeHtml(formatted)}</pre>
                     <button onclick="copyFIR(this)" class="flex items-center gap-1.5 text-xs font-bold text-primary hover:underline mt-1">
                         <span class="material-symbols-outlined text-[16px]">content_copy</span> Copy FIR
                     </button>
