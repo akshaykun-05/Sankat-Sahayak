@@ -5,10 +5,13 @@ if (process.env.NODE_ENV !== "production") {
 const express = require("express");
 const cors = require("cors");
 const Groq = require("groq-sdk");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const Tesseract = require("tesseract.js");
 
 // ── Config ──────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 if (!GROQ_API_KEY) {
   console.error("[ERROR] GROQ_API_KEY is missing. Add it to your .env file.");
@@ -18,10 +21,34 @@ if (!GROQ_API_KEY) {
 // ── Groq client ──────────────────────────────────────────────────────────────
 const groq = new Groq({ apiKey: GROQ_API_KEY });
 
+// ── Gemini client (optional – used for image analysis) ───────────────────────
+let geminiModel = null;
+if (GEMINI_API_KEY) {
+  try {
+    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    console.log("[SERVER] Gemini client initialised (image analysis enabled).");
+  } catch (e) {
+    console.warn("[SERVER] Gemini init failed – image analysis will be skipped.", e.message);
+  }
+} else {
+  console.warn("[SERVER] GEMINI_API_KEY not set – image analysis disabled.");
+}
+
 // ── Express app ──────────────────────────────────────────────────────────────
 const app = express();
-app.use(cors());
-app.use(express.json());
+
+// Allow all origins explicitly (required for deployed frontends)
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
+app.options("*", cors()); // handle preflight for all routes
+
+// Raise JSON body limit to 10 MB to accommodate base64-encoded images
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 // ── System prompt ────────────────────────────────────────────────────────────
 const SYSTEM_PROMPT = `You are a legal document assistant for Indian Police. Generate a formal First Information Report (FIR) in the official Indian police format.
@@ -111,6 +138,7 @@ app.get("/test", (req, res) => {
 
 // ── GET / ────────────────────────────────────────────────────────────────────
 app.get("/", (req, res) => {
+<<<<<<< HEAD
   return res.json({ status: "ok", endpoints: ["POST /generate-fir", "GET /test", "POST /trigger-sos"] });
 });
 
@@ -127,6 +155,16 @@ app.post("/trigger-sos", (req, res) => {
     success: true, 
     message: "Emergency services and local authorities have been notified." 
   });
+=======
+  return res.json({ status: "ok", endpoints: ["POST /generate-fir", "POST /trigger-sos", "GET /test"] });
+});
+
+// ── POST /trigger-sos ─────────────────────────────────────────────────────────
+app.post("/trigger-sos", (req, res) => {
+  const { latitude, longitude, timestamp } = req.body || {};
+  console.log(`[SOS] Alert received – Lat: ${latitude}, Lng: ${longitude}, Time: ${timestamp}`);
+  return res.json({ message: "SOS alert received. Emergency services notified." });
+>>>>>>> 41fe25a (fix backend (body limit, cors, sos))
 });
 //---------------------------------------------------
 // cleanFIRText: strip leftover placeholder brackets, preserve line breaks
@@ -146,7 +184,7 @@ function cleanFIRText(text) {
 //
 app.post("/generate-fir", async (req, res) => {
   try {
-    const { description } = req.body;
+    const { description, image } = req.body;
 
     // ── Input validation ─────────────────────────────────────────────────────
     if (!description || typeof description !== "string" || !description.trim()) {
@@ -157,11 +195,65 @@ app.post("/generate-fir", async (req, res) => {
 
     console.log("[POST /generate-fir] Request received.");
     console.log("[POST /generate-fir] Input description:", description.trim());
+    console.log("[POST /generate-fir] Image provided:", !!image);
     console.log("USING MODEL: llama-3.1-8b-instant");
-    //-function calling code-----------------------------------------------------
+
+    // ── Gemini image analysis (optional) ─────────────────────────────────────
+    let finalDescription = description.trim();
+
+    if (image && geminiModel) {
+      try {
+        console.log("[POST /generate-fir] Calling Gemini for image analysis...");
+
+        // Strip data-URL prefix if present (e.g. "data:image/jpeg;base64,")
+        const base64Data = image.includes(",") ? image.split(",")[1] : image;
+
+        const geminiResponse = await geminiModel.generateContent([
+          { text: "Describe this accident or crime scene in detail for an Indian police FIR. Focus on visible injuries, vehicles, objects, and environmental context." },
+          {
+            inlineData: {
+              mimeType: "image/jpeg",
+              data: base64Data,
+            },
+          },
+        ]);
+
+        const imageText = geminiResponse.response.text();
+        finalDescription += "\n\nImage Analysis:\n" + imageText;
+        console.log("[POST /generate-fir] Gemini image analysis appended.");
+      } catch (geminiErr) {
+        // Non-fatal – Groq will still run with the original description
+        console.error("[POST /generate-fir] Gemini failed, falling back to text-only:", geminiErr.message);
+      }
+    } else if (image && !geminiModel) {
+      console.warn("[POST /generate-fir] Image received but Gemini is not configured – skipping image analysis.");
+    }
+
+    // ── Tesseract OCR: vehicle number detection (optional) ───────────────────
+    if (image) {
+      try {
+        const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
+        const buffer = Buffer.from(base64Data, "base64");
+
+        const result = await Tesseract.recognize(buffer, "eng");
+        const ocrText = result.data.text;
+
+        // Match Indian vehicle number format: e.g. MH12AB1234
+        const match = ocrText.match(/[A-Z]{2}[0-9]{2}[A-Z]{2}[0-9]{4}/);
+        if (match) {
+          finalDescription += "\nVehicle Number Detected: " + match[0];
+          console.log("[POST /generate-fir] OCR vehicle number found:", match[0]);
+        } else {
+          console.log("[POST /generate-fir] OCR ran but no vehicle number matched.");
+        }
+      } catch (ocrErr) {
+        // Non-fatal – Groq still runs
+        console.error("[POST /generate-fir] OCR failed, continuing without vehicle number:", ocrErr.message);
+      }
+    }
 
     // ── Call Groq ────────────────────────────────────────────────────────────
-    const userPrompt = `Incident description:\n"${description.trim()}"`;
+    const userPrompt = `Incident description:\n"${finalDescription}"`;
 
     const completion = await groq.chat.completions.create({
       model: "llama-3.1-8b-instant",
