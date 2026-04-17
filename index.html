@@ -1281,39 +1281,42 @@
         let secondsLeft = 15;
 
         const triggerSOSBackend = async () => {
-            try {
-                // Determine API endpoint based on current URL to handle production vs local test
-                const apiBase = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-                    ? "http://localhost:3000"
-                    : "https://sankat-sahayak-backend.onrender.com";
+            const SOS_URL = "https://sankat-sahayak-backend.onrender.com/trigger-sos";
 
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(async (position) => {
-                        const lat = position.coords.latitude;
-                        const lng = position.coords.longitude;
-
-                        try {
-                            const response = await fetch(`${apiBase}/trigger-sos`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ latitude: lat, longitude: lng, timestamp: new Date().toISOString() })
-                            });
-
-                            const data = await response.json();
-                            alert(`🚨 SOS ALERT SENT SUCCESSFULLY!\n\nBackend Message: ${data.message}`);
-                        } catch (err) {
-                            console.error('Failed to notify backend:', err);
-                            alert('🚨 SOS sent successfully. Help is on the way.');
-                        }
-                    }, (error) => {
-                        console.error('Location error', error);
-                        alert('🚨 SOS triggered! Please enable browser location access so emergency services know where you are.');
+            const sendSOS = async (body) => {
+                try {
+                    const res = await fetch(SOS_URL, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(body)
                     });
-                } else {
-                    alert('🚨 SOS triggered locally. Geolocation is not supported by your browser.');
+
+                    if (!res.ok) throw new Error("Server responded with " + res.status);
+
+                    alert("🚨 SOS sent successfully!");
+                } catch (err) {
+                    console.error("SOS fetch error:", err);
+                    alert("❌ Failed to send SOS. Please try again.");
                 }
-            } catch (err) {
-                console.error(err);
+            };
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        sendSOS({
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            timestamp: new Date().toISOString()
+                        });
+                    },
+                    (err) => {
+                        console.error("Location error:", err);
+                        // Still send SOS even without coords
+                        sendSOS({ timestamp: new Date().toISOString() });
+                    }
+                );
+            } else {
+                sendSOS({ timestamp: new Date().toISOString() });
             }
         };
 
