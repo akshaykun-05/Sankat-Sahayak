@@ -138,33 +138,21 @@ app.get("/test", (req, res) => {
 
 // ── GET / ────────────────────────────────────────────────────────────────────
 app.get("/", (req, res) => {
-<<<<<<< HEAD
-  return res.json({ status: "ok", endpoints: ["POST /generate-fir", "GET /test", "POST /trigger-sos"] });
+  return res.json({ status: "ok", endpoints: ["POST /generate-fir", "POST /trigger-sos", "GET /test"] });
 });
 
 // ── POST /trigger-sos ────────────────────────────────────────────────────────
 app.post("/trigger-sos", (req, res) => {
-  const { latitude, longitude, timestamp } = req.body;
-  
+  const { latitude, longitude, timestamp } = req.body || {};
+
   console.log("\n🚨🚨🚨 [EMERGENCY SOS TRIGGERED] 🚨🚨🚨");
   console.log(`📍 Location : ${latitude}, ${longitude}`);
   console.log(`⏰ Time     : ${timestamp || new Date().toISOString()}`);
-  console.log("-> Dispatching emergency protocols (Mocking text/email alert)...");
-  
-  return res.json({ 
-    success: true, 
-    message: "Emergency services and local authorities have been notified." 
-  });
-=======
-  return res.json({ status: "ok", endpoints: ["POST /generate-fir", "POST /trigger-sos", "GET /test"] });
-});
 
-// ── POST /trigger-sos ─────────────────────────────────────────────────────────
-app.post("/trigger-sos", (req, res) => {
-  const { latitude, longitude, timestamp } = req.body || {};
-  console.log(`[SOS] Alert received – Lat: ${latitude}, Lng: ${longitude}, Time: ${timestamp}`);
-  return res.json({ message: "SOS alert received. Emergency services notified." });
->>>>>>> 41fe25a (fix backend (body limit, cors, sos))
+  return res.json({
+    success: true,
+    message: "Emergency services and local authorities have been notified."
+  });
 });
 //---------------------------------------------------
 // cleanFIRText: strip leftover placeholder brackets, preserve line breaks
