@@ -17,6 +17,7 @@
     "dotenv": "^17.4.2",
     "express": "^4.22.1",
     "groq-sdk": "^1.1.2",
-    "openai": "^6.34.0"
+    "openai": "^6.34.0",
+    "tesseract.js": "^7.0.0"
   }
 }
