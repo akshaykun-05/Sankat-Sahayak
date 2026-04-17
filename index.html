@@ -1694,44 +1694,56 @@
 
         function downloadFIRAsPDF(event, textContent) {
             const btn = event.currentTarget;
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = `<span class="material-symbols-outlined text-[20px] animate-spin">sync</span>`;
-            btn.disabled = true;
 
-            const printElement = document.createElement('div');
-            // Must be in the DOM for html2canvas to render — hide it off-screen
-            printElement.style.cssText = "position:fixed;left:-9999px;top:0;width:794px;background:#fff;padding:40px;font-family:sans-serif;color:#000;";
-            printElement.innerHTML = `
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <h1 style="color: #d32f2f; font-size: 24px; margin:0;">Official Incident Report (FIR)</h1>
-                    <p style="color: #666; font-size: 12px; margin-top:5px;">Generated securely via Sankat Sahayak System</p>
-                </div>
-                <hr style="border: 1px solid #eee; margin-bottom: 20px;" />
-                <div style="white-space: pre-wrap; font-size: 13px; line-height: 1.7; text-align: left;">${textContent}</div>
-                <div style="margin-top: 40px; text-align: center; font-size: 10px; color: #999;">
-                    <p>Document Timestamp: ${new Date().toLocaleString()}</p>
-                    <p>Electronically Generated Document. Valid for preliminary reporting.</p>
-                </div>
-            `;
+            // Escape HTML special chars so FIR text renders as plain text inside the iframe
+            const safe = textContent
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
 
-            // Attach to DOM so html2canvas can measure and render it
-            document.body.appendChild(printElement);
+            const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Sankat Sahayak FIR</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&family=Noto+Sans+Devanagari:wght@400;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Noto Sans', 'Noto Sans Devanagari', Arial, sans-serif; color: #000; background: #fff; padding: 40px; }
+    h1 { color: #c62828; font-size: 22px; text-align: center; margin-bottom: 6px; }
+    .sub { text-align: center; font-size: 11px; color: #666; margin-bottom: 20px; }
+    hr { border: none; border-top: 1px solid #ccc; margin-bottom: 20px; }
+    pre { white-space: pre-wrap; word-wrap: break-word; font-family: inherit; font-size: 13px; line-height: 1.75; }
+    .footer { margin-top: 40px; text-align: center; font-size: 10px; color: #999; }
+    @media print { body { padding: 20px; } }
+  </style>
+</head>
+<body>
+  <h1>Official Incident Report (FIR)</h1>
+  <p class="sub">Generated securely via Sankat Sahayak System</p>
+  <hr/>
+  <pre>${safe}</pre>
+  <div class="footer">
+    <p>Document Timestamp: ${new Date().toLocaleString()}</p>
+    <p>Electronically Generated Document. Valid for preliminary reporting.</p>
+  </div>
+  <script>window.onload = function(){ window.print(); }<\/script>
+</body>
+</html>`;
 
-            html2pdf().set({
-                margin: 15,
-                filename: 'Sankat_Sahayak_FIR_' + Date.now() + '.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            }).from(printElement).save().then(() => {
-                document.body.removeChild(printElement); // clean up
-                btn.innerHTML = originalHTML;
-                btn.disabled = false;
-            }).catch(() => {
-                document.body.removeChild(printElement);
-                btn.innerHTML = originalHTML;
-                btn.disabled = false;
-            });
+            const iframe = document.createElement('iframe');
+            iframe.style.cssText = "position:fixed;width:0;height:0;border:none;left:-9999px;top:-9999px;";
+            document.body.appendChild(iframe);
+
+            const doc = iframe.contentWindow.document;
+            doc.open();
+            doc.write(html);
+            doc.close();
+
+            // Clean up iframe after print dialog is dismissed
+            iframe.contentWindow.onafterprint = () => document.body.removeChild(iframe);
+            // Fallback cleanup after 2 minutes
+            setTimeout(() => { if (document.body.contains(iframe)) document.body.removeChild(iframe); }, 120000);
         }
 
     </script>
