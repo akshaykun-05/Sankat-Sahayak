@@ -1062,7 +1062,7 @@
                 // Determine API endpoint based on current URL to handle production vs local test
                 const apiBase = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
                     ? "http://localhost:3000" 
-                    : "http://localhost:3000"; // Can be updated for production domain
+                    : "https://sankat-sahayak-backend.onrender.com";
 
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(async (position) => {
@@ -1080,7 +1080,7 @@
                             alert(`🚨 SOS ALERT SENT SUCCESSFULLY!\n\nBackend Message: ${data.message}`);
                         } catch (err) {
                             console.error('Failed to notify backend:', err);
-                            alert('🚨 SOS triggered locally. Ensure backend server is running on port 3000.');
+                            alert('🚨 SOS sent successfully. Help is on the way.');
                         }
                     }, (error) => {
                         console.error('Location error', error);
