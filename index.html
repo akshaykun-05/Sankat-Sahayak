@@ -1532,7 +1532,7 @@
 
                     <!-- Actions Dock -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
-                        <button onclick="downloadFIRAsPDF(event, \`${firData.english.replace(/`/g, '\\`')}\`)"
+                        <button onclick="downloadFIRAsPDF(event, \`${(currentFIRLang === 'hindi' ? firData.hindi : firData.english).replace(/`/g, '\\`')}\`)"
                             class="group bg-on-surface dark:bg-white text-white dark:text-slate-900 h-16 rounded-2xl font-headline font-black uppercase tracking-widest text-[13px] active:scale-95 transition-all flex justify-center items-center gap-3 shadow-xl hover:brightness-110">
                             <span class="material-symbols-outlined text-[22px] group-hover:animate-bounce">picture_as_pdf</span> 
                             <span data-lang-key="download_pdf">${translations[currentLang].download_pdf}</span>
@@ -1681,7 +1681,7 @@
                                     class="flex-1 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 active:scale-95 text-on-surface dark:text-white py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all flex justify-center items-center gap-2 border border-black/5 dark:border-white/5">
                                     <span class="material-symbols-outlined text-[18px]">visibility</span> <span data-lang-key="view_full">${translations[currentLang].view_full}</span> 
                                 </button>
-                                <button onclick="downloadFIRAsPDF(event, \`${textEn.replace(/`/g, '\\`')}\`)" class="w-12 h-12 flex border border-black/10 dark:border-white/10 justify-center items-center rounded-xl bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-all shadow-sm text-blue-600 dark:text-blue-400">
+                                <button onclick="downloadFIRAsPDF(event, \`${textEn.replace(/`/g, '\\`')}\`, \`${textHi.replace(/`/g, '\\`')}\`)" class="w-12 h-12 flex border border-black/10 dark:border-white/10 justify-center items-center rounded-xl bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-all shadow-sm text-blue-600 dark:text-blue-400">
                                     <span class="material-symbols-outlined text-[20px]">picture_as_pdf</span>
                                 </button>
                             </div>
@@ -1692,8 +1692,11 @@
             container.insertBefore(card, container.firstChild);
         }
 
-        function downloadFIRAsPDF(event, textContent) {
+        function downloadFIRAsPDF(event, textEn, textHi) {
             const btn = event.currentTarget;
+
+            // Pick the correct language: if textHi is provided, respect currentFIRLang
+            const textContent = (textHi && currentFIRLang === 'hindi') ? textHi : textEn;
 
             // Escape HTML special chars so FIR text renders as plain text inside the iframe
             const safe = textContent
