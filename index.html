@@ -1590,11 +1590,24 @@
                     safeImage = "";
                 }
 
+                // AbortController: 90-second timeout (handles Render cold-start ~30-60s)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 90000);
+
+                // Show a hint after 8 seconds so user knows the server is waking up
+                const hintTimer = setTimeout(() => {
+                    textEl.innerText = "⏳ Waking server… please wait";
+                }, 8000);
+
                 const response = await fetch("https://sankat-sahayak-backend.onrender.com/generate-fir", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ description, image: safeImage })
+                    body: JSON.stringify({ description, image: safeImage }),
+                    signal: controller.signal
                 });
+
+                clearTimeout(timeoutId);
+                clearTimeout(hintTimer);
 
                 console.log("Status:", response.status);
 
@@ -1618,7 +1631,11 @@
 
             } catch (err) {
                 console.error("REAL ERROR:", err);
-                alert("⚠️ Failed to connect. Check console.");
+                if (err.name === "AbortError") {
+                    alert("⏱️ Server took too long to respond.\n\nThe backend may be waking up from sleep. Please wait 30 seconds and try again.");
+                } else {
+                    alert("⚠️ Failed to connect to server.\n\nPlease check your internet connection and try again.");
+                }
             } finally {
                 // UI Restore state
                 const currentLang = localStorage.getItem('preferredLanguage') || 'en';
