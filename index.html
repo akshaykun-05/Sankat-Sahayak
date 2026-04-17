@@ -14,6 +14,7 @@
         rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -198,17 +199,44 @@
             height: 2px;
         }
 
-        .sidebar-hidden .sidebar-backdrop { opacity: 0; pointer-events: none; }
-        .sidebar-hidden .sidebar-pane { transform: translateX(-100%); }
-        .sidebar-active .sidebar-backdrop { opacity: 1; pointer-events: auto; }
-        .sidebar-active .sidebar-pane { transform: translateX(0); }
-        .sidebar-hidden { pointer-events: none; }
-        .sidebar-active { pointer-events: auto; }
-        
-        @keyframes slideInTop {
-            0% { transform: translateY(-30px); opacity: 0; }
-            100% { transform: translateY(0); opacity: 1; }
+        .sidebar-hidden .sidebar-backdrop {
+            opacity: 0;
+            pointer-events: none;
         }
+
+        .sidebar-hidden .sidebar-pane {
+            transform: translateX(-100%);
+        }
+
+        .sidebar-active .sidebar-backdrop {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .sidebar-active .sidebar-pane {
+            transform: translateX(0);
+        }
+
+        .sidebar-hidden {
+            pointer-events: none;
+        }
+
+        .sidebar-active {
+            pointer-events: auto;
+        }
+
+        @keyframes slideInTop {
+            0% {
+                transform: translateY(-30px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
         .slide-in-top {
             animation: slideInTop 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
         }
@@ -220,10 +248,12 @@
             background-image: radial-gradient(#eee 1px, transparent 1px);
             background-size: 20px 20px;
         }
+
         .dark .fir-document {
             background-color: #0f172a;
             background-image: radial-gradient(#1e293b 1px, transparent 1px);
         }
+
         .watermark {
             position: absolute;
             top: 50%;
@@ -237,6 +267,7 @@
             letter-spacing: 0.5rem;
             white-space: nowrap;
         }
+
         .dark .watermark {
             opacity: 0.05;
         }
@@ -258,7 +289,8 @@
         class="fixed top-0 w-full z-50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl border-b border-white/60 dark:border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.03)] px-6 py-4 transition-all">
         <div class="flex justify-between items-center max-w-2xl mx-auto">
             <div class="flex items-center gap-4">
-                <button onclick="document.getElementById('sidebar-menu').classList.remove('sidebar-hidden'); document.getElementById('sidebar-menu').classList.add('sidebar-active');"
+                <button
+                    onclick="document.getElementById('sidebar-menu').classList.remove('sidebar-hidden'); document.getElementById('sidebar-menu').classList.add('sidebar-active');"
                     class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all outline-none text-primary">
                     <span class="material-symbols-outlined text-[26px]">menu</span>
                 </button>
@@ -268,7 +300,8 @@
                         <span class="material-symbols-outlined text-[18px]">health_and_safety</span>
                     </div>
                     <div class="flex flex-col justify-center">
-                        <h1 data-lang-key="app_title" class="font-headline font-extrabold text-xl tracking-tight text-primary">Sankat Sahayak</h1>
+                        <h1 data-lang-key="app_title"
+                            class="font-headline font-extrabold text-xl tracking-tight text-primary">Sankat Sahayak</h1>
                     </div>
                 </div>
             </div>
@@ -276,7 +309,8 @@
             <div class="flex items-center gap-3 relative group">
                 <!-- Translate Dropdown -->
                 <div class="relative" id="lang-dropdown-wrapper">
-                    <button onclick="document.getElementById('lang-popup-menu').classList.toggle('modal-active'); document.getElementById('lang-popup-menu').classList.toggle('modal-hidden');"
+                    <button
+                        onclick="document.getElementById('lang-popup-menu').classList.toggle('modal-active'); document.getElementById('lang-popup-menu').classList.toggle('modal-hidden');"
                         class="flex items-center gap-1.5 bg-white/80 dark:bg-slate-800/80 px-3 py-1.5 rounded-full border border-black/5 dark:border-white/10 text-on-surface-variant dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-all text-xs font-bold tracking-widest shadow-sm active:scale-95">
                         <span class="material-symbols-outlined text-[18px]">translate</span>
                         <span>EN / HI</span>
@@ -314,13 +348,15 @@
                 <h2
                     class="font-headline font-black text-[2.5rem] leading-[1.1] tracking-tight text-on-surface dark:text-white text-center transition-colors">
                     <span data-lang-key="hero_title_1">Emergency</span><br /><span data-lang-key="hero_title_2"
-                        class="text-primary tracking-tighter">Reporting.</span></h2>
+                        class="text-primary tracking-tighter">Reporting.</span>
+                </h2>
                 <div onclick="openModal('map-modal')"
                     class="cursor-pointer flex items-center gap-2 mt-4 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl max-w-[90vw] md:max-w-md px-4 py-2 rounded-[1.5rem] border border-black/5 dark:border-white/10 shadow-sm hover:scale-105 active:scale-95 transition-all">
                     <span class="material-symbols-outlined text-green-600 dark:text-green-400 text-xl flex-shrink-0"
                         style="font-variation-settings: 'FILL' 1;">location_on</span>
                     <span data-lang-key="location"
-                        class="text-green-700 dark:text-green-400 font-bold text-[11px] leading-tight tracking-wider text-left line-clamp-2">LOCATION VERIFIED</span>
+                        class="text-green-700 dark:text-green-400 font-bold text-[11px] leading-tight tracking-wider text-left line-clamp-2">LOCATION
+                        VERIFIED</span>
                 </div>
             </div>
         </section>
@@ -394,8 +430,10 @@
                             </button>
                         </div>
 
-                        <label class="pointer-events-auto cursor-pointer flex items-center gap-2 bg-gradient-to-r from-slate-700 to-slate-900 dark:from-slate-600 dark:to-slate-800 text-white px-4 h-11 rounded-full font-label font-bold tracking-widest text-xs uppercase hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-black/20 border border-white/10">
-                            <input type="file" class="hidden" accept="image/*,video/*" onchange="const span = this.parentElement.querySelector('.upload-text'); span.innerText = this.files.length > 0 ? 'Media Added' : 'Upload Media'; if(this.files.length > 0) { const icon = this.parentElement.querySelector('.upload-icon'); icon.innerText='check_circle'; icon.classList.add('text-green-400'); }" />
+                        <label
+                            class="pointer-events-auto cursor-pointer flex items-center gap-2 bg-gradient-to-r from-slate-700 to-slate-900 dark:from-slate-600 dark:to-slate-800 text-white px-4 h-11 rounded-full font-label font-bold tracking-widest text-xs uppercase hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-black/20 border border-white/10">
+                            <input type="file" class="hidden" accept="image/*,video/*"
+                                onchange="const span = this.parentElement.querySelector('.upload-text'); span.innerText = this.files.length > 0 ? 'Media Added' : 'Upload Media'; if(this.files.length > 0) { const icon = this.parentElement.querySelector('.upload-icon'); icon.innerText='check_circle'; icon.classList.add('text-green-400'); }" />
                             <span class="material-symbols-outlined text-[18px] upload-icon">upload_file</span>
                             <span data-lang-key="upload_media" class="upload-text">Upload Media</span>
                         </label>
@@ -416,83 +454,129 @@
         <div id="home-fir-result" class="hidden mt-8 space-y-6 slide-in-top"></div>
     </main>
 
-    <main id="view-explore" class="hidden pt-[100px] pb-[120px] px-6 max-w-2xl mx-auto space-y-8 animate-[fadeIn_0.3s_ease]">
+    <main id="view-explore"
+        class="hidden pt-[100px] pb-[120px] px-6 max-w-2xl mx-auto space-y-8 animate-[fadeIn_0.3s_ease]">
         <div class="text-center space-y-2">
-            <h2 data-lang-key="explore_title" class="font-headline font-black text-3xl tracking-tight text-on-surface dark:text-white">Emergency Directory</h2>
-            <p data-lang-key="explore_desc" class="font-body text-sm font-medium text-on-surface-variant/70 dark:text-slate-400 px-4">Instant connection to central emergency responders.</p>
+            <h2 data-lang-key="explore_title"
+                class="font-headline font-black text-3xl tracking-tight text-on-surface dark:text-white">Emergency
+                Directory</h2>
+            <p data-lang-key="explore_desc"
+                class="font-body text-sm font-medium text-on-surface-variant/70 dark:text-slate-400 px-4">Instant
+                connection to central emergency responders.</p>
         </div>
 
         <div class="space-y-4">
             <!-- Police -->
-            <div class="bg-white/50 dark:bg-slate-900/60 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 rounded-[2rem] shadow-sm flex items-center justify-between group hover:bg-white dark:hover:bg-slate-800 transition-colors">
+            <div
+                class="bg-white/50 dark:bg-slate-900/60 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 rounded-[2rem] shadow-sm flex items-center justify-between group hover:bg-white dark:hover:bg-slate-800 transition-colors">
                 <div class="flex items-center gap-4">
-                    <div class="w-14 h-14 rounded-[1.2rem] bg-blue-100 dark:bg-blue-900/30 flex justify-center items-center text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 flex-shrink-0">
-                     <span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">local_police</span>
+                    <div
+                        class="w-14 h-14 rounded-[1.2rem] bg-blue-100 dark:bg-blue-900/30 flex justify-center items-center text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 flex-shrink-0">
+                        <span class="material-symbols-outlined text-[28px]"
+                            style="font-variation-settings: 'FILL' 1;">local_police</span>
                     </div>
                     <div>
-                        <h4 data-lang-key="police" class="font-headline font-bold text-lg text-on-surface dark:text-white leading-tight mb-0.5">Police Control Room</h4>
-                        <p data-lang-key="police_desc" class="text-sm font-bold text-blue-600/70 dark:text-blue-400/80 tracking-wide">Central Dispatch • 100</p>
+                        <h4 data-lang-key="police"
+                            class="font-headline font-bold text-lg text-on-surface dark:text-white leading-tight mb-0.5">
+                            Police Control Room</h4>
+                        <p data-lang-key="police_desc"
+                            class="text-sm font-bold text-blue-600/70 dark:text-blue-400/80 tracking-wide">Central
+                            Dispatch • 100</p>
                     </div>
                 </div>
-                <a href="tel:100" class="w-12 h-12 flex-shrink-0 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white flex justify-center items-center shadow-lg shadow-blue-500/30 active:scale-95 transition-transform hover:brightness-110">
-                    <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">call</span>
+                <a href="tel:100"
+                    class="w-12 h-12 flex-shrink-0 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white flex justify-center items-center shadow-lg shadow-blue-500/30 active:scale-95 transition-transform hover:brightness-110">
+                    <span class="material-symbols-outlined text-[20px]"
+                        style="font-variation-settings: 'FILL' 1;">call</span>
                 </a>
             </div>
 
             <!-- Ambulance -->
-            <div class="bg-white/50 dark:bg-slate-900/60 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 rounded-[2rem] shadow-sm flex items-center justify-between group hover:bg-white dark:hover:bg-slate-800 transition-colors">
+            <div
+                class="bg-white/50 dark:bg-slate-900/60 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 rounded-[2rem] shadow-sm flex items-center justify-between group hover:bg-white dark:hover:bg-slate-800 transition-colors">
                 <div class="flex items-center gap-4">
-                    <div class="w-14 h-14 rounded-[1.2rem] bg-red-100 dark:bg-red-900/30 flex justify-center items-center text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 flex-shrink-0">
-                     <span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">ambulance</span>
+                    <div
+                        class="w-14 h-14 rounded-[1.2rem] bg-red-100 dark:bg-red-900/30 flex justify-center items-center text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 flex-shrink-0">
+                        <span class="material-symbols-outlined text-[28px]"
+                            style="font-variation-settings: 'FILL' 1;">ambulance</span>
                     </div>
                     <div>
-                        <h4 data-lang-key="medical" class="font-headline font-bold text-lg text-on-surface dark:text-white leading-tight mb-0.5">Medical Emergency</h4>
-                        <p data-lang-key="medical_desc" class="text-sm font-bold text-red-600/70 dark:text-red-400/80 tracking-wide">Ambulance Services • 108</p>
+                        <h4 data-lang-key="medical"
+                            class="font-headline font-bold text-lg text-on-surface dark:text-white leading-tight mb-0.5">
+                            Medical Emergency</h4>
+                        <p data-lang-key="medical_desc"
+                            class="text-sm font-bold text-red-600/70 dark:text-red-400/80 tracking-wide">Ambulance
+                            Services • 108</p>
                     </div>
                 </div>
-                <a href="tel:108" class="w-12 h-12 flex-shrink-0 rounded-full bg-gradient-to-br from-red-500 to-red-700 text-white flex justify-center items-center shadow-lg shadow-red-500/30 active:scale-95 transition-transform hover:brightness-110">
-                    <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">call</span>
+                <a href="tel:108"
+                    class="w-12 h-12 flex-shrink-0 rounded-full bg-gradient-to-br from-red-500 to-red-700 text-white flex justify-center items-center shadow-lg shadow-red-500/30 active:scale-95 transition-transform hover:brightness-110">
+                    <span class="material-symbols-outlined text-[20px]"
+                        style="font-variation-settings: 'FILL' 1;">call</span>
                 </a>
             </div>
 
             <!-- Fire -->
-            <div class="bg-white/50 dark:bg-slate-900/60 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 rounded-[2rem] shadow-sm flex items-center justify-between group hover:bg-white dark:hover:bg-slate-800 transition-colors">
+            <div
+                class="bg-white/50 dark:bg-slate-900/60 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 rounded-[2rem] shadow-sm flex items-center justify-between group hover:bg-white dark:hover:bg-slate-800 transition-colors">
                 <div class="flex items-center gap-4">
-                    <div class="w-14 h-14 rounded-[1.2rem] bg-orange-100 dark:bg-orange-900/30 flex justify-center items-center text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800/50 flex-shrink-0">
-                     <span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+                    <div
+                        class="w-14 h-14 rounded-[1.2rem] bg-orange-100 dark:bg-orange-900/30 flex justify-center items-center text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800/50 flex-shrink-0">
+                        <span class="material-symbols-outlined text-[28px]"
+                            style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
                     </div>
                     <div>
-                        <h4 data-lang-key="fire" class="font-headline font-bold text-lg text-on-surface dark:text-white leading-tight mb-0.5">Fire Rescue</h4>
-                        <p data-lang-key="fire_desc" class="text-sm font-bold text-orange-600/70 dark:text-orange-400/80 tracking-wide">Fire Brigade • 101</p>
+                        <h4 data-lang-key="fire"
+                            class="font-headline font-bold text-lg text-on-surface dark:text-white leading-tight mb-0.5">
+                            Fire Rescue</h4>
+                        <p data-lang-key="fire_desc"
+                            class="text-sm font-bold text-orange-600/70 dark:text-orange-400/80 tracking-wide">Fire
+                            Brigade • 101</p>
                     </div>
                 </div>
-                <a href="tel:101" class="w-12 h-12 flex-shrink-0 rounded-full bg-gradient-to-br from-orange-500 to-orange-700 text-white flex justify-center items-center shadow-lg shadow-orange-500/30 active:scale-95 transition-transform hover:brightness-110">
-                    <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">call</span>
+                <a href="tel:101"
+                    class="w-12 h-12 flex-shrink-0 rounded-full bg-gradient-to-br from-orange-500 to-orange-700 text-white flex justify-center items-center shadow-lg shadow-orange-500/30 active:scale-95 transition-transform hover:brightness-110">
+                    <span class="material-symbols-outlined text-[20px]"
+                        style="font-variation-settings: 'FILL' 1;">call</span>
                 </a>
             </div>
-            
+
             <!-- Women Help -->
-            <div class="bg-white/50 dark:bg-slate-900/60 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 rounded-[2rem] shadow-sm flex items-center justify-between group hover:bg-white dark:hover:bg-slate-800 transition-colors">
+            <div
+                class="bg-white/50 dark:bg-slate-900/60 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 rounded-[2rem] shadow-sm flex items-center justify-between group hover:bg-white dark:hover:bg-slate-800 transition-colors">
                 <div class="flex items-center gap-4">
-                    <div class="w-14 h-14 rounded-[1.2rem] bg-fuchsia-100 dark:bg-fuchsia-900/30 flex justify-center items-center text-fuchsia-600 dark:text-fuchsia-400 border border-fuchsia-200 dark:border-fuchsia-800/50 flex-shrink-0">
-                     <span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">female</span>
+                    <div
+                        class="w-14 h-14 rounded-[1.2rem] bg-fuchsia-100 dark:bg-fuchsia-900/30 flex justify-center items-center text-fuchsia-600 dark:text-fuchsia-400 border border-fuchsia-200 dark:border-fuchsia-800/50 flex-shrink-0">
+                        <span class="material-symbols-outlined text-[28px]"
+                            style="font-variation-settings: 'FILL' 1;">female</span>
                     </div>
                     <div>
-                        <h4 data-lang-key="women" class="font-headline font-bold text-lg text-on-surface dark:text-white leading-tight mb-0.5">Women Helpline</h4>
-                        <p data-lang-key="women_desc" class="text-sm font-bold text-fuchsia-600/70 dark:text-fuchsia-400/80 tracking-wide">Emergency Safety • 1091</p>
+                        <h4 data-lang-key="women"
+                            class="font-headline font-bold text-lg text-on-surface dark:text-white leading-tight mb-0.5">
+                            Women Helpline</h4>
+                        <p data-lang-key="women_desc"
+                            class="text-sm font-bold text-fuchsia-600/70 dark:text-fuchsia-400/80 tracking-wide">
+                            Emergency Safety • 1091</p>
                     </div>
                 </div>
-                <a href="tel:1091" class="w-12 h-12 flex-shrink-0 rounded-full bg-gradient-to-br from-fuchsia-500 to-fuchsia-700 text-white flex justify-center items-center shadow-lg shadow-fuchsia-500/30 active:scale-95 transition-transform hover:brightness-110">
-                    <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">call</span>
+                <a href="tel:1091"
+                    class="w-12 h-12 flex-shrink-0 rounded-full bg-gradient-to-br from-fuchsia-500 to-fuchsia-700 text-white flex justify-center items-center shadow-lg shadow-fuchsia-500/30 active:scale-95 transition-transform hover:brightness-110">
+                    <span class="material-symbols-outlined text-[20px]"
+                        style="font-variation-settings: 'FILL' 1;">call</span>
                 </a>
             </div>
         </div>
     </main>
 
-    <main id="view-history" class="hidden pt-[100px] pb-[120px] px-6 max-w-2xl mx-auto space-y-8 animate-[fadeIn_0.3s_ease]">
+    <main id="view-history"
+        class="hidden pt-[100px] pb-[120px] px-6 max-w-2xl mx-auto space-y-8 animate-[fadeIn_0.3s_ease]">
         <div class="text-center space-y-2 mb-6">
-            <h2 data-lang-key="history_title" class="font-headline font-black text-3xl tracking-tight text-on-surface dark:text-white">Case History</h2>
-            <p data-lang-key="history_desc" class="font-body text-sm font-medium text-on-surface-variant/70 dark:text-slate-400 px-4">Your securely generated incident reports.</p>
+            <h2 data-lang-key="history_title"
+                class="font-headline font-black text-3xl tracking-tight text-on-surface dark:text-white">Case History
+            </h2>
+            <p data-lang-key="history_desc"
+                class="font-body text-sm font-medium text-on-surface-variant/70 dark:text-slate-400 px-4">Your securely
+                generated incident reports.</p>
         </div>
 
         <div id="draft-list-container" class="space-y-4 flex flex-col">
@@ -506,8 +590,11 @@
                     <span class="material-symbols-outlined text-primary/40 text-[32px] font-light">article</span>
                 </div>
                 <div class="space-y-2 relative z-10">
-                    <p data-lang-key="empty_archive" class="font-extrabold text-[15px] text-on-surface dark:text-white tracking-tight">Empty Archive</p>
-                    <p data-lang-key="empty_desc" class="text-[13px] text-on-surface-variant/70 dark:text-slate-400 max-w-[240px] mx-auto font-medium leading-relaxed">
+                    <p data-lang-key="empty_archive"
+                        class="font-extrabold text-[15px] text-on-surface dark:text-white tracking-tight">Empty Archive
+                    </p>
+                    <p data-lang-key="empty_desc"
+                        class="text-[13px] text-on-surface-variant/70 dark:text-slate-400 max-w-[240px] mx-auto font-medium leading-relaxed">
                         Your generated incident reports will securely appear here for review and signature.</p>
                 </div>
             </div>
@@ -540,59 +627,77 @@
     <!-- Sidebar Menu -->
     <div id="sidebar-menu" class="fixed inset-0 z-[120] sidebar-hidden transition-all duration-300">
         <div class="absolute inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm cursor-pointer sidebar-backdrop transition-opacity duration-300"
-            onclick="document.getElementById('sidebar-menu').classList.add('sidebar-hidden'); document.getElementById('sidebar-menu').classList.remove('sidebar-active');"></div>
-        <div class="absolute top-0 left-0 w-72 h-full bg-surface dark:bg-slate-900 shadow-2xl sidebar-pane transition-transform duration-300 flex flex-col border-r border-black/5 dark:border-white/5">
+            onclick="document.getElementById('sidebar-menu').classList.add('sidebar-hidden'); document.getElementById('sidebar-menu').classList.remove('sidebar-active');">
+        </div>
+        <div
+            class="absolute top-0 left-0 w-72 h-full bg-surface dark:bg-slate-900 shadow-2xl sidebar-pane transition-transform duration-300 flex flex-col border-r border-black/5 dark:border-white/5">
             <!-- Header -->
-            <div class="p-6 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-white/50 dark:bg-slate-800/50 backdrop-blur-md">
+            <div
+                class="p-6 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-white/50 dark:bg-slate-800/50 backdrop-blur-md">
                 <div class="flex items-center gap-2">
-                    <div class="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-primary-light/50 to-primary/20 text-primary shadow-inner">
+                    <div
+                        class="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-primary-light/50 to-primary/20 text-primary shadow-inner">
                         <span class="material-symbols-outlined text-[18px]">health_and_safety</span>
                     </div>
-                    <h2 data-lang-key="app_title" class="font-headline font-black text-lg tracking-tight text-primary">Sankat Sahayak</h2>
+                    <h2 data-lang-key="app_title" class="font-headline font-black text-lg tracking-tight text-primary">
+                        Sankat Sahayak</h2>
                 </div>
-                <button onclick="document.getElementById('sidebar-menu').classList.add('sidebar-hidden'); document.getElementById('sidebar-menu').classList.remove('sidebar-active');"
+                <button
+                    onclick="document.getElementById('sidebar-menu').classList.add('sidebar-hidden'); document.getElementById('sidebar-menu').classList.remove('sidebar-active');"
                     class="w-8 h-8 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors text-on-surface dark:text-white">
                     <span class="material-symbols-outlined text-[20px]">close</span>
                 </button>
             </div>
-            
+
             <!-- Menu Items -->
             <div class="flex-grow py-4 overflow-y-auto space-y-4">
                 <div class="px-4">
-                    <div data-lang-key="sidebar_account" class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/50 dark:text-slate-500 mb-2 px-2">Account</div>
-                    <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all text-on-surface dark:text-slate-200 font-bold text-sm text-left">
+                    <div data-lang-key="sidebar_account"
+                        class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/50 dark:text-slate-500 mb-2 px-2">
+                        Account</div>
+                    <button
+                        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all text-on-surface dark:text-slate-200 font-bold text-sm text-left">
                         <span class="material-symbols-outlined text-[20px] text-primary">account_circle</span>
                         <span data-lang-key="sidebar_profile">User Profile</span>
                     </button>
-                    <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all text-on-surface dark:text-slate-200 font-bold text-sm text-left">
+                    <button
+                        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all text-on-surface dark:text-slate-200 font-bold text-sm text-left">
                         <span class="material-symbols-outlined text-[20px] text-primary">manage_accounts</span>
                         <span data-lang-key="sidebar_acc_settings">Account Settings</span>
                     </button>
                 </div>
-                
+
                 <div class="px-4 pt-4 border-t border-black/5 dark:border-white/5">
-                    <div data-lang-key="sidebar_app" class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/50 dark:text-slate-500 mb-2 px-2">Application</div>
-                    <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all text-on-surface dark:text-slate-200 font-bold text-sm text-left">
+                    <div data-lang-key="sidebar_app"
+                        class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/50 dark:text-slate-500 mb-2 px-2">
+                        Application</div>
+                    <button
+                        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all text-on-surface dark:text-slate-200 font-bold text-sm text-left">
                         <span class="material-symbols-outlined text-[20px] text-primary">settings</span>
                         <span data-lang-key="sidebar_app_settings">App Settings</span>
                     </button>
-                    <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all text-on-surface dark:text-slate-200 font-bold text-sm text-left">
+                    <button
+                        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all text-on-surface dark:text-slate-200 font-bold text-sm text-left">
                         <span class="material-symbols-outlined text-[20px] text-primary">help</span>
                         <span data-lang-key="sidebar_help">Help & Support</span>
                     </button>
                 </div>
 
                 <div class="px-4 pt-4 border-t border-black/5 dark:border-white/5">
-                    <div data-lang-key="sidebar_legal" class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/50 dark:text-slate-500 mb-2 px-2">Legal</div>
-                    <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all text-on-surface dark:text-slate-200 font-bold text-sm text-left">
+                    <div data-lang-key="sidebar_legal"
+                        class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/50 dark:text-slate-500 mb-2 px-2">
+                        Legal</div>
+                    <button
+                        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all text-on-surface dark:text-slate-200 font-bold text-sm text-left">
                         <span class="material-symbols-outlined text-[20px] text-primary">policy</span>
                         <span data-lang-key="sidebar_legal_policies">Legal & Privacy Policies</span>
                     </button>
                 </div>
             </div>
-            
+
             <div class="p-6 border-t border-black/5 dark:border-white/5 bg-white/30 dark:bg-slate-800/30">
-                <button class="w-full bg-red-500/10 text-red-600 dark:text-red-400 font-bold py-3 rounded-xl hover:bg-red-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
+                <button
+                    class="w-full bg-red-500/10 text-red-600 dark:text-red-400 font-bold py-3 rounded-xl hover:bg-red-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
                     <span class="material-symbols-outlined text-[18px]">logout</span>
                     <span data-lang-key="sidebar_signout">Sign Out</span>
                 </button>
@@ -607,55 +712,74 @@
             onclick="closeModal('profile-modal')"></div>
         <div
             class="relative w-full max-w-sm bg-surface dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/20 dark:border-white/10 flex flex-col items-center p-8 text-center">
-            
+
             <button onclick="closeModal('profile-modal')"
                 class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors text-on-surface dark:text-white">
                 <span class="material-symbols-outlined text-[20px]">close</span>
             </button>
 
             <!-- Profile Image -->
-            <div class="h-24 w-24 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center overflow-hidden shadow-lg border-4 border-white/80 dark:border-white/20 ring-4 ring-primary/20 mb-4 inline-block">
+            <div
+                class="h-24 w-24 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center overflow-hidden shadow-lg border-4 border-white/80 dark:border-white/20 ring-4 ring-primary/20 mb-4 inline-block">
                 <img alt="User" class="h-full w-full object-cover"
                     src="https://lh3.googleusercontent.com/aida-public/AB6AXuAo2ef69w10rnodsixAHQBUzeV1VCp9tTRKl7XlRF1osAk2Kx7n4zn_yMrmaCE5zECVk3FlP_1R2wENgJRU1nDQmczxSmfq_ZkghIQ_V-Lo9EeLKYQQIX8zJGVQjjD6XfcffX_jPM97hPp37S4guxzgl55EZ4WwcfoPdtxHdDStcoDiaPDbnXliaUi1F_IOsgJ7ThnqEEG5GWaPvKH7N_iqnFWax4F9-DXr4MgLFvnWlydZnHy8q_YhWC2yvfU8A-8yJ59T1OMANNYX" />
             </div>
 
             <!-- Name and Basics -->
-            <h3 class="font-headline font-black text-2xl text-on-surface dark:text-white tracking-tight leading-none mb-1">Rohan M.</h3>
-            <p data-lang-key="profile_age" class="font-body text-sm font-bold tracking-widest uppercase text-on-surface-variant/60 dark:text-slate-400 mb-6">28 YRS • MALE</p>
+            <h3
+                class="font-headline font-black text-2xl text-on-surface dark:text-white tracking-tight leading-none mb-1">
+                Rohan M.</h3>
+            <p data-lang-key="profile_age"
+                class="font-body text-sm font-bold tracking-widest uppercase text-on-surface-variant/60 dark:text-slate-400 mb-6">
+                28 YRS • MALE</p>
 
-            <div class="w-full bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-black/5 dark:border-white/5 p-4 text-left space-y-4 shadow-sm mb-6">
+            <div
+                class="w-full bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-black/5 dark:border-white/5 p-4 text-left space-y-4 shadow-sm mb-6">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0 text-red-600 dark:text-red-400">
+                    <div
+                        class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0 text-red-600 dark:text-red-400">
                         <span class="material-symbols-outlined text-[20px]">bloodtype</span>
                     </div>
                     <div>
-                        <div data-lang-key="blood_group_label" class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/50 dark:text-slate-500 mb-0.5">Blood Group</div>
-                        <div class="font-headline font-black text-lg text-primary tracking-tight leading-none">O POSITIVE (O+)</div>
+                        <div data-lang-key="blood_group_label"
+                            class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/50 dark:text-slate-500 mb-0.5">
+                            Blood Group</div>
+                        <div class="font-headline font-black text-lg text-primary tracking-tight leading-none">O
+                            POSITIVE (O+)</div>
                     </div>
                 </div>
 
                 <div class="flex items-center gap-3 border-t border-black/5 dark:border-white/5 pt-4">
-                    <div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0 text-orange-600 dark:text-orange-400">
+                    <div
+                        class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0 text-orange-600 dark:text-orange-400">
                         <span class="material-symbols-outlined text-[20px]">medical_information</span>
                     </div>
                     <div>
-                        <div data-lang-key="allergies_label" class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/50 dark:text-slate-500 mb-0.5">Allergies / Conditions</div>
-                        <div class="font-bold text-sm text-on-surface dark:text-slate-200 tracking-tight leading-snug">Penicillin<br/>Asthma (Mild)</div>
+                        <div data-lang-key="allergies_label"
+                            class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/50 dark:text-slate-500 mb-0.5">
+                            Allergies / Conditions</div>
+                        <div class="font-bold text-sm text-on-surface dark:text-slate-200 tracking-tight leading-snug">
+                            Penicillin<br />Asthma (Mild)</div>
                     </div>
                 </div>
             </div>
 
             <!-- Emergency Contact -->
-            <div class="w-full border-2 border-primary/20 dark:border-primary/40 bg-primary/5 rounded-2xl p-4 flex flex-col items-center">
-                <div data-lang-key="emergency_contact_label" class="text-[10px] font-bold uppercase tracking-widest text-primary/70 mb-1">Emergency Contact</div>
-                <div class="font-headline font-black text-lg text-on-surface dark:text-white tracking-tight leading-none mb-1">Sneha (Wife)</div>
+            <div
+                class="w-full border-2 border-primary/20 dark:border-primary/40 bg-primary/5 rounded-2xl p-4 flex flex-col items-center">
+                <div data-lang-key="emergency_contact_label"
+                    class="text-[10px] font-bold uppercase tracking-widest text-primary/70 mb-1">Emergency Contact</div>
+                <div
+                    class="font-headline font-black text-lg text-on-surface dark:text-white tracking-tight leading-none mb-1">
+                    Sneha (Wife)</div>
                 <div class="font-mono text-sm font-bold tracking-widest text-primary">+91 98765 43210</div>
-                <button class="mt-3 w-full bg-primary text-white font-bold py-2 rounded-xl active:scale-95 transition-transform flex items-center justify-center gap-2">
+                <button
+                    class="mt-3 w-full bg-primary text-white font-bold py-2 rounded-xl active:scale-95 transition-transform flex items-center justify-center gap-2">
                     <span class="material-symbols-outlined text-[18px]">call</span>
                     <span data-lang-key="dial_now">Dial Now</span>
                 </button>
             </div>
-            
+
         </div>
     </div>
 
@@ -663,16 +787,22 @@
     <div id="sos-countdown-modal"
         class="fixed inset-0 z-[110] modal-hidden transition-all duration-300 flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/80 backdrop-blur-md"></div>
-        
-        <div id="sos-flash-card" class="relative w-full max-w-md bg-red-600 rounded-[2.5rem] shadow-[0_0_80px_rgba(220,38,38,0.6)] border-[6px] border-red-400 p-10 flex flex-col items-center justify-center gap-6 text-center z-10 transition-colors animate-[pulse_1s_ease-in-out_infinite]">
-            <span class="material-symbols-outlined text-white text-[80px] drop-shadow-md" style="font-variation-settings: 'FILL' 1;">warning</span>
-            
+
+        <div id="sos-flash-card"
+            class="relative w-full max-w-md bg-red-600 rounded-[2.5rem] shadow-[0_0_80px_rgba(220,38,38,0.6)] border-[6px] border-red-400 p-10 flex flex-col items-center justify-center gap-6 text-center z-10 transition-colors animate-[pulse_1s_ease-in-out_infinite]">
+            <span class="material-symbols-outlined text-white text-[80px] drop-shadow-md"
+                style="font-variation-settings: 'FILL' 1;">warning</span>
+
             <div class="space-y-1">
-                <h2 data-lang-key="sos_countdown_title" class="text-white font-headline font-black text-3xl tracking-tighter uppercase leading-tight drop-shadow-sm">Emergency SOS</h2>
-                <p data-lang-key="dispatching_in" class="text-red-100 font-body font-bold tracking-widest text-sm uppercase mt-2">Dispatching in</p>
-                <div id="sos-modal-timer" class="text-white font-headline font-black text-8xl tabular-nums drop-shadow-xl mt-4">15</div>
+                <h2 data-lang-key="sos_countdown_title"
+                    class="text-white font-headline font-black text-3xl tracking-tighter uppercase leading-tight drop-shadow-sm">
+                    Emergency SOS</h2>
+                <p data-lang-key="dispatching_in"
+                    class="text-red-100 font-body font-bold tracking-widest text-sm uppercase mt-2">Dispatching in</p>
+                <div id="sos-modal-timer"
+                    class="text-white font-headline font-black text-8xl tabular-nums drop-shadow-xl mt-4">15</div>
             </div>
-            
+
             <button id="cancel-sos-btn"
                 class="mt-8 bg-white text-red-700 font-headline font-black tracking-widest text-2xl uppercase px-10 py-5 rounded-full shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-transform w-full border-b-[6px] border-gray-300 flex items-center justify-center gap-3">
                 <span class="material-symbols-outlined text-[32px] font-bold">cancel</span>
@@ -692,7 +822,9 @@
                 class="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5 relative z-10 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md">
                 <div class="flex items-center gap-3">
                     <span class="material-symbols-outlined text-green-600 dark:text-green-400">satellite_alt</span>
-                    <h3 data-lang-key="map_title" class="font-headline font-bold text-lg text-on-surface dark:text-white tracking-tight">Location Calibration</h3>
+                    <h3 data-lang-key="map_title"
+                        class="font-headline font-bold text-lg text-on-surface dark:text-white tracking-tight">Location
+                        Calibration</h3>
                 </div>
                 <button onclick="closeModal('map-modal')"
                     class="w-8 h-8 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors text-on-surface dark:text-white">
@@ -700,7 +832,8 @@
                 </button>
             </div>
             <div class="relative flex-grow bg-gray-200 dark:bg-slate-800">
-                <iframe id="map-iframe" width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0" marginwidth="0"
+                <iframe id="map-iframe" width="100%" height="100%" frameborder="0" scrolling="no" marginheight="0"
+                    marginwidth="0"
                     src="https://maps.google.com/maps?q=Mumbai,India&t=k&z=17&ie=UTF8&iwloc=&output=embed"
                     style="filter: contrast(1.2) brightness(0.9);"></iframe>
                 <div class="crosshair"></div>
@@ -708,11 +841,16 @@
                 <div class="absolute bottom-6 left-6 right-6 md:right-auto md:w-72">
                     <div
                         class="bg-black/80 backdrop-blur-md border border-white/10 p-4 rounded-2xl flex flex-col items-start gap-1 shadow-2xl">
-                        <div data-lang-key="gps_telemetry" class="text-white/50 text-[10px] font-bold uppercase tracking-widest">GPS Telemetry</div>
-                        <div id="gps-telemetry" class="text-green-400 font-mono text-[13px] tracking-wide mt-1">LAT: 19.0760° N<br />LNG:
+                        <div data-lang-key="gps_telemetry"
+                            class="text-white/50 text-[10px] font-bold uppercase tracking-widest">GPS Telemetry</div>
+                        <div id="gps-telemetry" class="text-green-400 font-mono text-[13px] tracking-wide mt-1">LAT:
+                            19.0760° N<br />LNG:
                             72.8777° E</div>
-                        <div class="text-white font-medium text-xs mt-2 pt-2 border-t border-white/10 w-full"><span data-lang-key="accuracy">Accuracy</span>:
-                            <span id="gps-accuracy" class="text-primary font-bold">±3 <span data-lang-key="meters">Meters</span></span></div>
+                        <div class="text-white font-medium text-xs mt-2 pt-2 border-t border-white/10 w-full"><span
+                                data-lang-key="accuracy">Accuracy</span>:
+                            <span id="gps-accuracy" class="text-primary font-bold">±3 <span
+                                    data-lang-key="meters">Meters</span></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -734,7 +872,8 @@
                 <div
                     class="inline-flex items-center gap-2 bg-primary/20 px-3 py-1 rounded-full border border-primary/30 mb-4">
                     <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                    <span data-lang-key="live_dictation" class="text-[10px] text-primary font-bold uppercase tracking-widest">Live Dictation</span>
+                    <span data-lang-key="live_dictation"
+                        class="text-[10px] text-primary font-bold uppercase tracking-widest">Live Dictation</span>
                 </div>
                 <h3 class="text-2xl font-headline font-black text-white px-4 h-32 overflow-hidden leading-snug tracking-tight"
                     data-lang-key="listening" id="live-transcript">Listening...</h3>
@@ -764,8 +903,9 @@
         <div class="relative w-full h-full flex flex-col justify-between">
             <!-- Real Camera Feed Background -->
             <div class="absolute inset-0 bg-black overflow-hidden flex items-center justify-center">
-                <video id="real-camera-feed" class="absolute inset-0 w-full h-full object-cover" autoplay playsinline></video>
-                
+                <video id="real-camera-feed" class="absolute inset-0 w-full h-full object-cover" autoplay
+                    playsinline></video>
+
                 <!-- Viewfinder Brackets -->
                 <div
                     class="absolute top-[20%] left-[10%] w-12 h-12 border-t-[3px] border-l-[3px] border-primary rounded-tl-xl opacity-70">
@@ -779,7 +919,9 @@
                 <div
                     class="absolute bottom-[20%] right-[10%] w-12 h-12 border-b-[3px] border-r-[3px] border-primary rounded-br-xl opacity-70">
                 </div>
-                <div data-lang-key="hold_steady" class="absolute text-white/50 text-xs font-mono font-bold tracking-widest bottom-32 uppercase z-10 drop-shadow-md">Hold
+                <div data-lang-key="hold_steady"
+                    class="absolute text-white/50 text-xs font-mono font-bold tracking-widest bottom-32 uppercase z-10 drop-shadow-md">
+                    Hold
                     steady</div>
             </div>
 
@@ -898,10 +1040,10 @@
                 enBtn.className = "text-left px-5 py-3.5 text-sm font-bold text-primary bg-primary/5 hover:bg-primary/10 transition-colors flex items-center justify-between";
                 enBtn.innerHTML = `English ${checkIcon}`;
             }
-            
+
             // Close the dropdown after selection
             const popupMenu = document.getElementById('lang-popup-menu');
-            if(popupMenu) {
+            if (popupMenu) {
                 popupMenu.classList.remove('modal-active');
                 popupMenu.classList.add('modal-hidden');
             }
@@ -942,12 +1084,12 @@
         }
 
         function switchView(viewId) {
-            window.scrollTo({top:0});
+            window.scrollTo({ top: 0 });
             document.getElementById('view-home').classList.add('hidden');
             document.getElementById('view-explore').classList.add('hidden');
             const viewHistory = document.getElementById('view-history');
             if (viewHistory) viewHistory.classList.add('hidden');
-            
+
             document.getElementById(viewId).classList.remove('hidden');
         }
 
@@ -1021,7 +1163,7 @@
             }
         }
 
-        function startTranscription() {}
+        function startTranscription() { }
         function stopTranscription() { stopVoiceInput(); }
 
         let currentStream = null;
@@ -1071,7 +1213,7 @@
                     await track.applyConstraints({
                         advanced: [{ torch: isFlashOn }]
                     });
-                } catch(e) { console.error("Flash unsupported:", e); }
+                } catch (e) { console.error("Flash unsupported:", e); }
             }
         }
 
@@ -1094,15 +1236,15 @@
 
                 setTimeout(() => {
                     closeModal('camera-modal');
-                    
+
                     const uploadIcon = document.querySelector('.upload-icon');
                     const uploadText = document.querySelector('.upload-text');
-                    if(uploadIcon) {
-                        uploadIcon.innerText='check_circle';
+                    if (uploadIcon) {
+                        uploadIcon.innerText = 'check_circle';
                         uploadIcon.classList.add('text-green-400');
                     }
-                    if(uploadText) uploadText.innerText = 'Media Added';
-                    
+                    if (uploadText) uploadText.innerText = 'Media Added';
+
                     const textAreaEl = document.getElementById('main-textarea');
                     if (!textAreaEl.value.includes("[Photo Attached: evidence.jpg]")) {
                         const prefix = textAreaEl.value.trim() === "" ? "" : "\n\n";
@@ -1123,27 +1265,27 @@
         const triggerSOSBackend = async () => {
             try {
                 // Determine API endpoint based on current URL to handle production vs local test
-                const apiBase = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
-                    ? "http://localhost:3000" 
-                    : "https://sankat-sahayak-backend.onrender.com";
+                const apiBase = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+                    ? "http://localhost:3000"
+                    : "http://localhost:3000"; // Can be updated for production domain
 
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(async (position) => {
                         const lat = position.coords.latitude;
                         const lng = position.coords.longitude;
-                        
+
                         try {
                             const response = await fetch(`${apiBase}/trigger-sos`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ latitude: lat, longitude: lng, timestamp: new Date().toISOString() })
                             });
-                            
+
                             const data = await response.json();
                             alert(`🚨 SOS ALERT SENT SUCCESSFULLY!\n\nBackend Message: ${data.message}`);
                         } catch (err) {
                             console.error('Failed to notify backend:', err);
-                            alert('🚨 SOS sent successfully. Help is on the way.');
+                            alert('🚨 SOS triggered locally. Ensure backend server is running on port 3000.');
                         }
                     }, (error) => {
                         console.error('Location error', error);
@@ -1165,18 +1307,18 @@
             secondsLeft = 15;
             const modalTimer = document.getElementById('sos-modal-timer');
             modalTimer.innerText = secondsLeft;
-            
+
             // Open full screen modal
             openModal('sos-countdown-modal');
 
             countdownTimer = setInterval(() => {
                 secondsLeft--;
-                
+
                 // Vibrate for 200ms
                 if ("vibrate" in navigator) {
                     navigator.vibrate(200);
                 }
-                
+
                 // Flash the card background between red-600 and super bright red
                 const flashCard = document.getElementById('sos-flash-card');
                 if (flashCard) {
@@ -1185,7 +1327,7 @@
                         flashCard.classList.add('bg-[#ff0000]'); // Brighter red
                     } else {
                         flashCard.classList.remove('bg-[#ff0000]');
-                        flashCard.classList.add('bg-red-600'); 
+                        flashCard.classList.add('bg-red-600');
                     }
                 }
 
@@ -1195,7 +1337,7 @@
                     clearInterval(countdownTimer);
                     isSOSPending = false;
                     if ("vibrate" in navigator) navigator.vibrate(0);
-                    
+
                     closeModal('sos-countdown-modal');
                     triggerSOSBackend();
                 }
@@ -1222,17 +1364,17 @@
             tabs.forEach(btn => {
                 btn.className = "tab-btn w-12 h-12 flex flex-col items-center justify-center text-on-surface-variant/60 dark:text-slate-400 hover:text-primary dark:hover:text-primary tap-highlight-none transition-colors";
                 const span = btn.querySelector('span');
-                if(span) span.style.fontVariationSettings = "'FILL' 0";
+                if (span) span.style.fontVariationSettings = "'FILL' 0";
             });
             clickedBtn.className = "tab-btn active relative w-12 h-12 flex flex-col items-center justify-center bg-gradient-to-br from-primary to-[#b71c1c] text-white rounded-full shadow-lg shadow-primary/30 tap-highlight-none transition-transform active:scale-95 border border-primary-light/20";
             const clickedSpan = clickedBtn.querySelector('span');
-            if(clickedSpan) clickedSpan.style.fontVariationSettings = "'FILL' 1";
+            if (clickedSpan) clickedSpan.style.fontVariationSettings = "'FILL' 1";
         }
 
         // Live Geolocation Tracking
         const initLocationTracking = () => {
             const locationTextSpan = document.querySelector('[data-lang-key="location"]');
-            if(locationTextSpan) locationTextSpan.innerText = "LOCATING...";
+            if (locationTextSpan) locationTextSpan.innerText = "LOCATING...";
 
             // Check if Geolocation is supported
             if ("geolocation" in navigator) {
@@ -1246,16 +1388,16 @@
                         // Reverse Geocode the coordinates into a neighborhood/city string via free API
                         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
                         const data = await response.json();
-                        
+
                         let locationName = "LOCATION VERIFIED";
-                        if(data && data.display_name) {
+                        if (data && data.display_name) {
                             // Extract the first 4 parts of the full street address to be highly detailed but avoid Country/ZIP
                             const parts = data.display_name.split(',').map(s => s.trim());
                             locationName = parts.slice(0, 4).join(', ').toUpperCase();
                         }
-                        
+
                         // Update UI Header Location String
-                        if(locationTextSpan) locationTextSpan.innerText = locationName;
+                        if (locationTextSpan) locationTextSpan.innerText = locationName;
 
                         // Update Modal Map iframe
                         const mapIframe = document.getElementById('map-iframe');
@@ -1265,23 +1407,23 @@
 
                         // Update Modal Telemetry HUD
                         const telemetryBox = document.getElementById('gps-telemetry');
-                        if(telemetryBox) telemetryBox.innerHTML = `LAT: ${lat.toFixed(4)}° N<br />LNG: ${lng.toFixed(4)}° E`;
-                        
-                        const accuracySpan = document.getElementById('gps-accuracy');
-                        if(accuracySpan) accuracySpan.innerText = `±${Math.round(accuracy)} Meters`;
+                        if (telemetryBox) telemetryBox.innerHTML = `LAT: ${lat.toFixed(4)}° N<br />LNG: ${lng.toFixed(4)}° E`;
 
-                    } catch(err) {
+                        const accuracySpan = document.getElementById('gps-accuracy');
+                        if (accuracySpan) accuracySpan.innerText = `±${Math.round(accuracy)} Meters`;
+
+                    } catch (err) {
                         console.error('Reverse Geocoding failed', err);
                         // Fallback text if reverse routing fails
-                        if(locationTextSpan) locationTextSpan.innerText = "LOCATION LOGGED";
+                        if (locationTextSpan) locationTextSpan.innerText = "LOCATION LOGGED";
                     }
                 }, (error) => {
                     console.error('Location error', error);
                     // Denied permission or error text
-                    if(locationTextSpan) locationTextSpan.innerText = "GPS OFF";
+                    if (locationTextSpan) locationTextSpan.innerText = "GPS OFF";
                 }, { enableHighAccuracy: true });
             } else {
-                if(locationTextSpan) locationTextSpan.innerText = "LOCATION UNAVAILABLE";
+                if (locationTextSpan) locationTextSpan.innerText = "LOCATION UNAVAILABLE";
             }
         };
 
@@ -1308,7 +1450,7 @@
 
         function viewFullFIR(textEn, textHi) {
             firData.english = textEn;
-            firData.hindi   = textHi;
+            firData.hindi = textHi;
             // Default FIR specific view to site language preference
             currentFIRLang = localStorage.getItem('preferredLanguage') === 'hi' ? 'hindi' : 'english';
             switchView('view-home');
@@ -1318,13 +1460,13 @@
         function renderInlineFIR() {
             const currentLang = localStorage.getItem('preferredLanguage') || 'en';
             const content = currentFIRLang === "english" ? firData.english : firData.hindi;
-            
+
             // Translations for internal toggle labels
             const langNameEn = currentLang === 'hi' ? 'अंग्रेजी' : 'English';
             const langNameHi = currentLang === 'hi' ? 'हिंदी' : 'Hindi';
-            
-            const langLabel  = currentFIRLang === "english" ? langNameEn : langNameHi;
-            const btnLabel   = currentFIRLang === "english" ? (translations[currentLang].switch_to + " " + langNameHi) : (translations[currentLang].switch_to + " " + langNameEn);
+
+            const langLabel = currentFIRLang === "english" ? langNameEn : langNameHi;
+            const btnLabel = currentFIRLang === "english" ? (translations[currentLang].switch_to + " " + langNameHi) : (translations[currentLang].switch_to + " " + langNameEn);
 
             const homeResult = document.getElementById('home-fir-result');
             homeResult.classList.remove('hidden');
@@ -1381,7 +1523,7 @@
                     </div>
                 </div>
             `;
-            
+
             // Scroll to the result
             homeResult.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
@@ -1395,9 +1537,9 @@
         }
 
         async function generateFIR() {
-            const btn     = document.getElementById('generate-fir-btn');
-            const icon    = document.getElementById('generate-icon');
-            const textEl  = document.getElementById('generate-text');
+            const btn = document.getElementById('generate-fir-btn');
+            const icon = document.getElementById('generate-icon');
+            const textEl = document.getElementById('generate-text');
             const textArea = document.getElementById('main-textarea');
             const description = textArea.value.trim();
 
@@ -1428,8 +1570,8 @@
                 if (response.ok) {
                     // Store both language versions; default to English
                     firData.english = data.fir_english || "";
-                    firData.hindi   = data.fir_hindi   || "Hindi version not available";
-                    currentFIRLang  = "english";
+                    firData.hindi = data.fir_hindi || "Hindi version not available";
+                    currentFIRLang = "english";
 
                     // Render inline result with toggle
                     renderInlineFIR();
@@ -1462,7 +1604,7 @@
             // Create Card
             const card = document.createElement('div');
             card.className = "bg-white dark:bg-slate-800 rounded-3xl p-6 border border-black/5 dark:border-white/10 shadow-lg relative overflow-hidden group slide-in-top mb-4";
-            
+
             // Generate clean date string
             const now = new Date();
             const dateStr = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) + " • " + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -1496,7 +1638,6 @@
                             </div>
             `;
 
-            
             // Insert at top inside list container
             container.insertBefore(card, container.firstChild);
         }
@@ -1506,38 +1647,147 @@
             const originalHTML = btn.innerHTML;
             btn.innerHTML = `<span class="material-symbols-outlined text-[20px] animate-spin">sync</span> Downloading...`;
             btn.disabled = true;
-            
-            const printElement = document.createElement('div');
-            printElement.style.padding = "40px";
-            printElement.style.fontFamily = "sans-serif";
-            printElement.style.color = "#000";
-            printElement.style.backgroundColor = "#fff";
-            printElement.innerHTML = `
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <h1 style="color: #d32f2f; font-size: 24px; margin:0;">Official Incident Report (FIR)</h1>
-                    <p style="color: #666; font-size: 12px; margin-top:5px;">Generated securely via Sankat Sahayak System</p>
-                </div>
-                <hr style="border: 1px solid #eee; margin-bottom: 20px;" />
-                <div style="white-space: pre-wrap; font-size: 14px; line-height: 1.6; text-align: left;">${textContent}</div>
-                <div style="margin-top: 40px; text-align: center; font-size: 10px; color: #999;">
-                    <p>Document Timestamp: ${new Date().toLocaleString()}</p>
-                    <p>Electronically Generated Document. Valid for preliminary reporting.</p>
-                </div>
-            `;
-            
-            html2pdf().set({
-                margin: 15,
-                filename: 'Sankat_Sahayak_FIR_' + Date.now() + '.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            }).from(printElement).save().then(() => {
+
+            try {
+                // Access jsPDF from the standalone jsPDF UMD bundle
+                const { jsPDF } = window.jspdf;
+                if (!jsPDF) throw new Error('jsPDF not loaded');
+                const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+                const pageW = doc.internal.pageSize.getWidth();
+                const pageH = doc.internal.pageSize.getHeight();
+                const marginL = 20;
+                const marginR = 20;
+                const maxW = pageW - marginL - marginR;
+                let y = 20;
+
+                function checkPage(needed) {
+                    if (y + needed > pageH - 25) {
+                        doc.addPage();
+                        y = 20;
+                    }
+                }
+
+                // ── HEADER ──
+                doc.setFontSize(20);
+                doc.setTextColor(198, 40, 40);
+                doc.setFont('helvetica', 'bold');
+                doc.text('OFFICIAL INCIDENT REPORT', pageW / 2, y, { align: 'center' });
+                y += 7;
+
+                doc.setFontSize(10);
+                doc.setTextColor(100);
+                doc.setFont('helvetica', 'normal');
+                doc.text('FIRST INFORMATION REPORT (FIR)', pageW / 2, y, { align: 'center' });
+                y += 5;
+
+                doc.setDrawColor(198, 40, 40);
+                doc.setLineWidth(0.8);
+                doc.line(marginL, y, pageW - marginR, y);
+                y += 8;
+
+                // ── META ROW ──
+                const now = new Date();
+                const dateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' });
+                const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+                doc.setFillColor(248, 248, 248);
+                doc.roundedRect(marginL, y, maxW, 16, 2, 2, 'F');
+                doc.setDrawColor(230);
+                doc.roundedRect(marginL, y, maxW, 16, 2, 2, 'S');
+
+                doc.setFontSize(7);
+                doc.setTextColor(150);
+                doc.setFont('helvetica', 'bold');
+                doc.text('REPORT GENERATED', marginL + 4, y + 5);
+                doc.text('DOCUMENT TYPE', pageW - marginR - 4, y + 5, { align: 'right' });
+
+                doc.setFontSize(10);
+                doc.setTextColor(50);
+                doc.setFont('helvetica', 'normal');
+                doc.text(dateStr + '  •  ' + timeStr, marginL + 4, y + 12);
+                doc.text('Preliminary FIR Draft', pageW - marginR - 4, y + 12, { align: 'right' });
+                y += 22;
+
+                doc.setDrawColor(220);
+                doc.setLineWidth(0.3);
+                doc.line(marginL, y, pageW - marginR, y);
+                y += 8;
+
+                // ── FIR BODY ──
+                const lines = textContent.split('\n');
+
+                lines.forEach(line => {
+                    const trimmed = line.trim();
+                    if (!trimmed) { y += 3; return; }
+
+                    const isHeading = /^[A-Z\s\/\(\)]+:/.test(trimmed) && !trimmed.startsWith('\u2022');
+
+                    if (isHeading) {
+                        checkPage(12);
+                        y += 3;
+                        doc.setDrawColor(210);
+                        doc.setLineWidth(0.2);
+                        doc.line(marginL, y + 5, pageW - marginR, y + 5);
+                        doc.setFontSize(9);
+                        doc.setTextColor(30);
+                        doc.setFont('helvetica', 'bold');
+                        doc.text(trimmed, marginL, y + 3);
+                        y += 10;
+                    } else {
+                        doc.setFontSize(10);
+                        doc.setTextColor(60);
+                        doc.setFont('helvetica', 'normal');
+                        const wrapped = doc.splitTextToSize(trimmed, maxW - 6);
+                        const blockH = wrapped.length * 5;
+                        checkPage(blockH);
+                        doc.text(wrapped, marginL + 3, y);
+                        y += blockH + 1;
+                    }
+                });
+
+                // ── FOOTER ──
+                checkPage(40);
+                y += 10;
+                doc.setDrawColor(230);
+                doc.setLineWidth(0.5);
+                doc.line(marginL, y, pageW - marginR, y);
+                y += 12;
+
+                doc.setFontSize(7);
+                doc.setTextColor(150);
+                doc.setFont('helvetica', 'bold');
+                doc.text('SIGNATURE OF INFORMANT', marginL, y);
+                doc.text('SIGNATURE OF OFFICER', pageW / 2 + 10, y);
+                y += 15;
+
+                doc.setDrawColor(150);
+                doc.setLineWidth(0.3);
+                doc.line(marginL, y, pageW / 2 - 10, y);
+                doc.line(pageW / 2 + 10, y, pageW - marginR, y);
+                y += 12;
+
+                doc.setFontSize(7);
+                doc.setTextColor(170);
+                doc.setFont('helvetica', 'normal');
+                doc.text('This document was electronically generated via the Sankat Sahayak AI System.', pageW / 2, y, { align: 'center' });
+                y += 4;
+                doc.text('Valid for preliminary reporting purposes only. Subject to verification by authorized officers.', pageW / 2, y, { align: 'center' });
+
+                doc.save('Sankat_Sahayak_FIR_' + Date.now() + '.pdf');
+
+            } catch (err) {
+                console.error('PDF generation failed:', err);
+                alert('PDF generation failed. Please try again.');
+            } finally {
                 btn.innerHTML = originalHTML;
                 btn.disabled = false;
-            });
+            }
         }
 
     </script>
+
 </body>
 
 </html>
+
