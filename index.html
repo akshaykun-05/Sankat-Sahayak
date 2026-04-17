@@ -1582,13 +1582,10 @@
 
                 console.log("Sending request...");
 
-                // Prevent large image from crashing the request
-                let safeImage = imageBase64;
-                console.log("Image size:", safeImage ? safeImage.length : 0); // debug
-                if (safeImage && safeImage.length > 500000) {
-                    console.warn("Image too large, skipping image");
-                    safeImage = "";
-                }
+                // Image processing disabled on free Render tier (Tesseract.js causes memory crash).
+                // TODO: re-enable when on a paid hosting plan with sufficient RAM.
+                // UI capture (FileReader, "Media Added") still works — image just isn't sent to backend.
+                const safeImage = "";
 
                 // AbortController: 90-second timeout (handles Render cold-start ~30-60s)
                 const controller = new AbortController();
