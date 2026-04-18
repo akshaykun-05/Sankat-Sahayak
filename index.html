@@ -14,6 +14,29 @@
         rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        /* Force UI Unblocking for Download and Generic Buttons */
+        #output, #applicationOutput, button {
+            position: relative;
+            z-index: 10;
+            pointer-events: auto;
+        }
+
+        * {
+            pointer-events: auto;
+        }
+
+        button {
+            z-index: 999 !important;
+        }
+        
+        /* Protect functional overlays from the global pointer-events rule */
+        .modal-hidden, .sidebar-hidden, .pointer-events-none {
+            pointer-events: none !important;
+        }
+    </style>
+
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -1609,6 +1632,9 @@
             }
 
             // Fix UI corruption: Before rendering new output
+            if (document.getElementById("output")) document.getElementById("output").innerHTML = "";
+            if (document.getElementById("applicationOutput")) document.getElementById("applicationOutput").innerHTML = "";
+
             document.getElementById("home-fir-result").innerHTML = "";
             document.getElementById("home-app-result").innerHTML = "";
 
