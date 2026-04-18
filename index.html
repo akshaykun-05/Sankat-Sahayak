@@ -1520,6 +1520,9 @@
                 renderInlineFIR('${type}');
             `;
 
+            // Safe pre element generation
+            const preElementId = isFIR ? "fir-generated-content" : "app-generated-content";
+
             homeResult.innerHTML = `
                 <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-[2.5rem] p-8 md:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white/40 dark:border-white/10 relative overflow-hidden group">
                     <!-- Watermark -->
@@ -1554,16 +1557,17 @@
                     <!-- FIR Content DOCUMENT BOX -->
                     <div class="relative group/doc mb-10">
                         <div class="absolute -inset-1 blur-sm bg-gradient-to-br from-black/5 to-transparent dark:from-white/5 opacity-0 group-hover/doc:opacity-100 transition-opacity"></div>
-                        <div class="fir-document relative p-6 md:p-10 rounded-[1.5rem] border border-black/5 dark:border-white/10 shadow-inner overflow-hidden min-h-[300px]">
-                            <pre class="whitespace-pre-wrap text-[14px] md:text-[15px] font-medium leading-[1.8] text-slate-800 dark:text-slate-200 max-h-[60vh] overflow-y-auto custom-scrollbar relative z-10">${escapeHtml(content)}</pre>
+                        <div id="${preElementId}_container" class="fir-document relative p-6 md:p-10 rounded-[1.5rem] border border-black/5 dark:border-white/10 shadow-inner overflow-hidden min-h-[300px]">
+                            <!-- Pre element will be safely appended here -->
                         </div>
                     </div>
 
                     <!-- Actions Dock -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
-                        <button onclick="downloadFIRAsPDF(event, \`${(currentViewLang === 'hindi' ? dataObj.hindi : dataObj.english).replace(/`/g, '\\`')}\`)"
-                            class="group bg-on-surface dark:bg-white text-white dark:text-slate-900 h-16 rounded-2xl font-headline font-black uppercase tracking-widest text-[13px] active:scale-95 transition-all flex justify-center items-center gap-3 shadow-xl hover:brightness-110">
-                            <span class="material-symbols-outlined text-[22px] group-hover:animate-bounce">picture_as_pdf</span> 
+                        <!-- Removed PDF download for safety -->
+                        <button onclick="downloadFIRAsPDF()"
+                            class="group bg-on-surface dark:bg-white text-white dark:text-slate-900 h-16 rounded-2xl font-headline font-black uppercase tracking-widest text-[13px] opacity-50 cursor-not-allowed flex justify-center items-center gap-3 shadow-xl">
+                            <span class="material-symbols-outlined text-[22px]">picture_as_pdf</span> 
                             <span>Download PDF</span>
                         </button>
                         <button id="copy-${type}-btn" onclick="copyFIRToClipboard('${type}')"
@@ -1574,16 +1578,22 @@
                 </div>
             `;
 
+            // SAFE METHOD: append properly using textContent
+            const pre = document.createElement("pre");
+            pre.id = preElementId;
+            pre.className = "whitespace-pre-wrap text-[14px] md:text-[15px] font-medium leading-[1.8] text-slate-800 dark:text-slate-200 max-h-[60vh] overflow-y-auto custom-scrollbar relative z-10 p-4 rounded shadow bg-white/50";
+            pre.textContent = sanitize(content);
+
+            const container = document.getElementById(`${preElementId}_container`);
+            container.innerHTML = "";
+            container.appendChild(pre);
+
             // Scroll to the result (but only logic for the top one if both)
             if (isFIR) homeResult.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
-        function escapeHtml(str) {
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;');
+        function sanitize(text) {
+            return text.replace(/<[^>]*>?/gm, '');
         }
 
         async function generateFIR() {
@@ -1597,6 +1607,10 @@
                 alert("Please describe the incident in the journal first.");
                 return;
             }
+
+            // Fix UI corruption: Before rendering new output
+            document.getElementById("home-fir-result").innerHTML = "";
+            document.getElementById("home-app-result").innerHTML = "";
 
             // UI Loading state
             btn.disabled = true;
@@ -1625,14 +1639,14 @@
                     textEl.innerText = "⏳ Waking server… please wait";
                 }, 8000);
 
-                const firPromise = fetch("https://sankat-sahayak-backend.onrender.com/generate-fir", {
+                const firPromise = fetch("http://localhost:3000/generate-fir", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ description, image: safeImage, mode: "fir" }),
                     signal: controller.signal
                 });
 
-                const appPromise = fetch("https://sankat-sahayak-backend.onrender.com/generate-fir", {
+                const appPromise = fetch("http://localhost:3000/generate-fir", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ description, image: safeImage, mode: "application" }),
@@ -1706,6 +1720,8 @@
             const previewText = textEn.replace(/\n/g, " ").substring(0, 100) + "...";
             const draftTitle = type === 'fir' ? translations[currentLang].fir_draft_title : "Formal Application Draft";
 
+            const previewId = `preview-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
             card.innerHTML = `
                 <div class="flex items-start justify-between mb-4">
                     <div class="flex items-center gap-3">
@@ -1720,14 +1736,15 @@
                     <span class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border border-green-200 dark:border-green-800/60 shadow-sm flex items-center gap-1"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span><span data-lang-key="status_ready">${translations[currentLang].status_ready}</span></span>
                 </div>
                 <div class="bg-black/5 dark:bg-white/5 p-4 rounded-xl border border-black/5 dark:border-white/5 mb-5 relative group-hover:bg-black/10 dark:group-hover:bg-white/10 transition-colors">
-                  <p class="text-[13px] font-medium text-on-surface-variant dark:text-slate-300 line-clamp-3 leading-relaxed">${previewText}</p>
+                  <p id="${previewId}" class="text-[13px] font-medium text-on-surface-variant dark:text-slate-300 line-clamp-3 leading-relaxed"></p>
                 </div>
                 <div class="flex gap-2">
                                 <button onclick="viewFullFIR(\`${textEn.replace(/`/g, '\\`')}\`, \`${textHi.replace(/`/g, '\\`')}\`, '${type}')"
                                     class="flex-1 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 active:scale-95 text-on-surface dark:text-white py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all flex justify-center items-center gap-2 border border-black/5 dark:border-white/5">
                                     <span class="material-symbols-outlined text-[18px]">visibility</span> <span data-lang-key="view_full">${translations[currentLang].view_full}</span> 
                                 </button>
-                                <button onclick="downloadFIRAsPDF(event, \`${textEn.replace(/`/g, '\\`')}\`, \`${textHi.replace(/`/g, '\\`')}\`, '${type}')" class="w-12 h-12 flex border border-black/10 dark:border-white/10 justify-center items-center rounded-xl bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-all shadow-sm text-blue-600 dark:text-blue-400">
+                                <!-- Removed PDF button functionality for safety -->
+                                <button onclick="downloadFIRAsPDF()" class="w-12 h-12 flex border border-black/10 dark:border-white/10 justify-center items-center rounded-xl bg-white dark:bg-slate-700 opacity-50 cursor-not-allowed shadow-sm text-blue-600 dark:text-blue-400">
                                     <span class="material-symbols-outlined text-[20px]">picture_as_pdf</span>
                                 </button>
                             </div>
@@ -1735,64 +1752,13 @@
 
             // Insert at top inside list container
             container.insertBefore(card, container.firstChild);
+
+            // Safe append for text preview
+            document.getElementById(previewId).textContent = sanitize(previewText);
         }
 
-        function downloadFIRAsPDF(event, textEn, textHi, type = 'fir') {
-            const btn = event.currentTarget;
-            let currentLang = type === 'fir' ? currentFIRLang : currentAppLang;
-
-            // Pick the correct language: if textHi is provided, respect currentLang
-            const textContent = (textHi && currentLang === 'hindi') ? textHi : textEn;
-
-            // Escape HTML special chars so FIR text renders as plain text inside the iframe
-            const safe = textContent
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;");
-
-            const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8"/>
-  <title>Sankat Sahayak FIR</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&family=Noto+Sans+Devanagari:wght@400;700&display=swap');
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Noto Sans', 'Noto Sans Devanagari', Arial, sans-serif; color: #000; background: #fff; padding: 40px; }
-    h1 { color: #c62828; font-size: 22px; text-align: center; margin-bottom: 6px; }
-    .sub { text-align: center; font-size: 11px; color: #666; margin-bottom: 20px; }
-    hr { border: none; border-top: 1px solid #ccc; margin-bottom: 20px; }
-    pre { white-space: pre-wrap; word-wrap: break-word; font-family: inherit; font-size: 13px; line-height: 1.75; }
-    .footer { margin-top: 40px; text-align: center; font-size: 10px; color: #999; }
-    @media print { body { padding: 20px; } }
-  </style>
-</head>
-<body>
-  <h1>Official Incident Report (FIR)</h1>
-  <p class="sub">Generated securely via Sankat Sahayak System</p>
-  <hr/>
-  <pre>${safe}</pre>
-  <div class="footer">
-    <p>Document Timestamp: ${new Date().toLocaleString()}</p>
-    <p>Electronically Generated Document. Valid for preliminary reporting.</p>
-  </div>
-  <script>window.onload = function(){ window.print(); }<\/script>
-</body>
-</html>`;
-
-            const iframe = document.createElement('iframe');
-            iframe.style.cssText = "position:fixed;width:0;height:0;border:none;left:-9999px;top:-9999px;";
-            document.body.appendChild(iframe);
-
-            const doc = iframe.contentWindow.document;
-            doc.open();
-            doc.write(html);
-            doc.close();
-
-            // Clean up iframe after print dialog is dismissed
-            iframe.contentWindow.onafterprint = () => document.body.removeChild(iframe);
-            // Fallback cleanup after 2 minutes
-            setTimeout(() => { if (document.body.contains(iframe)) document.body.removeChild(iframe); }, 120000);
+        function downloadFIRAsPDF() {
+            alert("PDF generation has been temporarily disabled due to security and UI sanitization updates.");
         }
 
     </script>
