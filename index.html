@@ -1545,6 +1545,8 @@
             const titleTranslation = translations[currentLang].fir_generated_title || "Generated Document";
             const displayTitle = isFIR ? titleTranslation : "Generated Application";
             
+            const evidenceUrl = isFIR ? firData.evidence_url : appData.evidence_url;
+            
             const nextLangToggle = `
                 if('${type}'==='fir') {
                     currentFIRLang = currentFIRLang === 'english' ? 'hindi' : 'english';
@@ -1597,6 +1599,19 @@
                         </div>
                     </div>
 
+                    ${evidenceUrl ? `
+                    <!-- Evidence Download UI Link -->
+                    <div class="mt-4 mb-4 p-4 border border-blue-500/20 bg-blue-500/5 rounded-xl flex items-center justify-between relative z-10 shadow-inner">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-blue-500 bg-blue-500/10 p-2 rounded-lg">link</span>
+                            <span class="text-[13px] font-bold text-slate-700 dark:text-slate-300">Attached Evidence Media</span>
+                        </div>
+                        <a href="${evidenceUrl}" target="_blank" rel="noopener noreferrer" class="text-[12px] font-bold text-blue-600 hover:text-blue-500 underline flex items-center gap-1 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-black/5 dark:border-white/5 active:scale-95 transition-all shadow-sm">
+                            View Upload <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+                        </a>
+                    </div>
+                    ` : ''}
+
                     <!-- Actions Dock -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
                         <!-- Safe PDF Download -->
@@ -1623,6 +1638,63 @@
         function sanitize(text) {
             return text.replace(/<[^>]*>?/gm, '');
         }
+
+        // --- MEDIA PARSING PIPELINE ---
+        function compressImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = event => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_SIZE = 800; // Limit image bounds securely
+                        let { width, height } = img;
+                        if (width > height && width > MAX_SIZE) {
+                            height *= MAX_SIZE / width;
+                            width = MAX_SIZE;
+                        } else if (height > MAX_SIZE) {
+                            width *= MAX_SIZE / height;
+                            height = MAX_SIZE;
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.6));
+                    };
+                    img.onerror = e => reject(e);
+                };
+                reader.onerror = e => reject(e);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function extractVideoFrame(file) {
+            return new Promise((resolve, reject) => {
+                const video = document.createElement('video');
+                video.preload = 'metadata';
+                video.playsInline = true;
+                video.muted = true;
+                const url = URL.createObjectURL(file);
+                video.src = url;
+
+                video.onloadeddata = () => {
+                    // Extract frame from halfway mark up to 1st second max.
+                    video.currentTime = Math.min(1, video.duration / 2);
+                };
+
+                video.onseeked = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                    URL.revokeObjectURL(url);
+                    resolve(canvas.toDataURL('image/jpeg', 0.6));
+                };
+                video.onerror = e => { URL.revokeObjectURL(url); reject(e); };
+            });
+        }
+        // -----------------------------
 
         async function generateFIR() {
             const btn = document.getElementById('generate-fir-btn');
@@ -1656,10 +1728,19 @@
 
                 console.log("Sending request...");
 
-                // Image processing disabled on free Render tier (Tesseract.js causes memory crash).
-                // TODO: re-enable when on a paid hosting plan with sufficient RAM.
-                // UI capture (FileReader, "Media Added") still works — image just isn't sent to backend.
-                const safeImage = "";
+                let safeImage = "";
+                const fileInput = document.getElementById('imageInput');
+                if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                    textEl.innerText = "Processing Evidence Media...";
+                    const file = fileInput.files[0];
+                    if (file.type.startsWith('video/')) {
+                        safeImage = await extractVideoFrame(file);
+                    } else if (file.type.startsWith('image/')) {
+                        safeImage = await compressImage(file);
+                    }
+                    console.log("Media safely extracted matching limits.");
+                    textEl.innerText = translations[currentLang].generating;
+                }
 
                 // AbortController: 90-second timeout (handles Render cold-start ~30-60s)
                 const controller = new AbortController();
@@ -1700,8 +1781,10 @@
                 console.log("Response APP:", dataApp);
 
                 // Store both language versions
+                // Store both language versions securely alongside evidence paths
                 firData.english = dataFir.fir_english || "";
                 firData.hindi = dataFir.fir_hindi || "Hindi version not available";
+                firData.evidence_url = dataFir.evidence_url || "";
                 currentFIRLang = "english";
 
                 appData.english = dataApp.fir_english || "";
