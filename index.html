@@ -1581,7 +1581,7 @@
                     <!-- Actions Dock -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
                         <!-- Safe PDF Download -->
-                        <button onclick="downloadFIRAsPDF(event, \`${(currentViewLang === 'hindi' ? dataObj.hindi : dataObj.english).replace(/`/g, '\\`')}\`, null, '${type}')"
+                        <button onclick="downloadFIRAsPDF(event, '${type}')"
                             class="group bg-on-surface dark:bg-white text-white dark:text-slate-900 h-16 rounded-2xl font-headline font-black uppercase tracking-widest text-[13px] active:scale-95 transition-all flex justify-center items-center gap-3 shadow-xl hover:brightness-110">
                             <span class="material-symbols-outlined text-[22px] group-hover:animate-bounce">picture_as_pdf</span> 
                             <span>Download PDF</span>
@@ -1758,12 +1758,12 @@
                   <p id="${previewId}" class="text-[13px] font-medium text-on-surface-variant dark:text-slate-300 line-clamp-3 leading-relaxed"></p>
                 </div>
                 <div class="flex gap-2">
-                                <button onclick="viewFullFIR(\`${textEn.replace(/`/g, '\\`')}\`, \`${textHi.replace(/`/g, '\\`')}\`, '${type}')"
+                                <button onclick="viewFullFIR(decodeURIComponent('${encodeURIComponent(textEn)}'), decodeURIComponent('${encodeURIComponent(textHi)}'), '${type}')"
                                     class="flex-1 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 active:scale-95 text-on-surface dark:text-white py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all flex justify-center items-center gap-2 border border-black/5 dark:border-white/5">
                                     <span class="material-symbols-outlined text-[18px]">visibility</span> <span data-lang-key="view_full">${translations[currentLang].view_full}</span> 
                                 </button>
                                 <!-- PDF Download -->
-                                <button onclick="downloadFIRAsPDF(event, \`${textEn.replace(/`/g, '\\`')}\`, \`${textHi.replace(/`/g, '\\`')}\`, '${type}')" class="w-12 h-12 flex border border-black/10 dark:border-white/10 justify-center items-center rounded-xl bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-all shadow-sm text-blue-600 dark:text-blue-400">
+                                <button onclick="downloadFIRAsPDF(event, '${type}', decodeURIComponent('${encodeURIComponent(textEn)}'), decodeURIComponent('${encodeURIComponent(textHi)}'))" class="w-12 h-12 flex border border-black/10 dark:border-white/10 justify-center items-center rounded-xl bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-all shadow-sm text-blue-600 dark:text-blue-400">
                                     <span class="material-symbols-outlined text-[20px]">picture_as_pdf</span>
                                 </button>
                             </div>
@@ -1776,13 +1776,26 @@
             document.getElementById(previewId).textContent = sanitize(previewText);
         }
 
-        function downloadFIRAsPDF(event, textEn, textHi, type = 'fir') {
+        function downloadFIRAsPDF(event, type, customTextEn = null, customTextHi = null) {
             let currentLang = type === 'fir' ? currentFIRLang : currentAppLang;
-            const textContent = (textHi && currentLang === 'hindi') ? textHi : textEn;
+            let dataObj = type === 'fir' ? firData : appData;
+            
+            // Respect custom text if triggered from history archives, else use global current session data
+            let textEn = customTextEn !== null ? customTextEn : dataObj.english;
+            let textHi = customTextHi !== null ? customTextHi : dataObj.hindi;
+            
+            const textContent = (currentLang === 'hindi') ? textHi : textEn;
 
             // Generate safe HTML structure
             const element = document.createElement('div');
             element.style.cssText = "font-family: Arial, sans-serif; padding: 40px; color: #000; background: #fff;";
+            
+            // Critical bounds enforcement so html2canvas renders detatched nodes properly
+            element.style.position = 'absolute';
+            element.style.top = '-9999px';
+            element.style.left = '-9999px';
+            element.style.width = '800px'; 
+            document.body.appendChild(element);
             
             const title = type === 'fir' ? "Official Incident Report (FIR)" : "Formal Police Application";
             
@@ -1809,9 +1822,15 @@
             };
 
             if(window.html2pdf) {
-                html2pdf().set(opt).from(element).save();
+                html2pdf().set(opt).from(element).save().then(() => {
+                    document.body.removeChild(element);
+                }).catch(e => {
+                    console.error("PDF generation engine failed", e);
+                    document.body.removeChild(element);
+                });
             } else {
                 alert("PDF generation component is loading. Please try again.");
+                document.body.removeChild(element);
             }
         }
 
