@@ -1580,10 +1580,10 @@
 
                     <!-- Actions Dock -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
-                        <!-- Removed PDF download for safety -->
-                        <button onclick="downloadFIRAsPDF()"
-                            class="group bg-on-surface dark:bg-white text-white dark:text-slate-900 h-16 rounded-2xl font-headline font-black uppercase tracking-widest text-[13px] opacity-50 cursor-not-allowed flex justify-center items-center gap-3 shadow-xl">
-                            <span class="material-symbols-outlined text-[22px]">picture_as_pdf</span> 
+                        <!-- Safe PDF Download -->
+                        <button onclick="downloadFIRAsPDF(event, \`${(currentViewLang === 'hindi' ? dataObj.hindi : dataObj.english).replace(/`/g, '\\`')}\`, null, '${type}')"
+                            class="group bg-on-surface dark:bg-white text-white dark:text-slate-900 h-16 rounded-2xl font-headline font-black uppercase tracking-widest text-[13px] active:scale-95 transition-all flex justify-center items-center gap-3 shadow-xl hover:brightness-110">
+                            <span class="material-symbols-outlined text-[22px] group-hover:animate-bounce">picture_as_pdf</span> 
                             <span>Download PDF</span>
                         </button>
                         <button id="copy-${type}-btn" onclick="copyFIRToClipboard('${type}')"
@@ -1762,8 +1762,8 @@
                                     class="flex-1 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 active:scale-95 text-on-surface dark:text-white py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all flex justify-center items-center gap-2 border border-black/5 dark:border-white/5">
                                     <span class="material-symbols-outlined text-[18px]">visibility</span> <span data-lang-key="view_full">${translations[currentLang].view_full}</span> 
                                 </button>
-                                <!-- Removed PDF button functionality for safety -->
-                                <button onclick="downloadFIRAsPDF()" class="w-12 h-12 flex border border-black/10 dark:border-white/10 justify-center items-center rounded-xl bg-white dark:bg-slate-700 opacity-50 cursor-not-allowed shadow-sm text-blue-600 dark:text-blue-400">
+                                <!-- PDF Download -->
+                                <button onclick="downloadFIRAsPDF(event, \`${textEn.replace(/`/g, '\\`')}\`, \`${textHi.replace(/`/g, '\\`')}\`, '${type}')" class="w-12 h-12 flex border border-black/10 dark:border-white/10 justify-center items-center rounded-xl bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-all shadow-sm text-blue-600 dark:text-blue-400">
                                     <span class="material-symbols-outlined text-[20px]">picture_as_pdf</span>
                                 </button>
                             </div>
@@ -1776,8 +1776,43 @@
             document.getElementById(previewId).textContent = sanitize(previewText);
         }
 
-        function downloadFIRAsPDF() {
-            alert("PDF generation has been temporarily disabled due to security and UI sanitization updates.");
+        function downloadFIRAsPDF(event, textEn, textHi, type = 'fir') {
+            let currentLang = type === 'fir' ? currentFIRLang : currentAppLang;
+            const textContent = (textHi && currentLang === 'hindi') ? textHi : textEn;
+
+            // Generate safe HTML structure
+            const element = document.createElement('div');
+            element.style.cssText = "font-family: Arial, sans-serif; padding: 40px; color: #000; background: #fff;";
+            
+            const title = type === 'fir' ? "Official Incident Report (FIR)" : "Formal Police Application";
+            
+            element.innerHTML = `
+                <h1 style="color: #c62828; font-size: 22px; text-align: center; margin-bottom: 6px;">${title}</h1>
+                <p style="text-align: center; font-size: 11px; color: #666; margin-bottom: 20px;">Generated securely via Sankat Sahayak System</p>
+                <hr style="border: none; border-top: 1px solid #ccc; margin-bottom: 20px;"/>
+                <pre id="pdf-safe-content" style="white-space: pre-wrap; word-wrap: break-word; font-family: inherit; font-size: 13px; line-height: 1.75;"></pre>
+                <div style="margin-top: 40px; text-align: center; font-size: 10px; color: #999;">
+                    <p>Document Timestamp: ${new Date().toLocaleString()}</p>
+                    <p>Electronically Generated Document. Valid for preliminary reporting.</p>
+                </div>
+            `;
+            
+            // Safe assignment bypassing parsing execution entirely
+            element.querySelector('#pdf-safe-content').textContent = textContent;
+
+            const opt = {
+              margin:       0.5,
+              filename:     `${type}-draft-${Date.now()}.pdf`,
+              image:        { type: 'jpeg', quality: 0.98 },
+              html2canvas:  { scale: 2 },
+              jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            if(window.html2pdf) {
+                html2pdf().set(opt).from(element).save();
+            } else {
+                alert("PDF generation component is loading. Please try again.");
+            }
         }
 
     </script>
