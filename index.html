@@ -1776,43 +1776,28 @@
             document.getElementById(previewId).textContent = sanitize(previewText);
         }
 
-        function downloadFIRAsPDF(event, type, customTextEn = null, customTextHi = null) {
-            let currentLang = type === 'fir' ? currentFIRLang : currentAppLang;
-            let dataObj = type === 'fir' ? firData : appData;
+        function downloadFIRAsPDF(event, type) {
+            const btn = event.currentTarget;
             
-            // Respect custom text if triggered from history archives, else use global current session data
-            let textEn = customTextEn !== null ? customTextEn : dataObj.english;
-            let textHi = customTextHi !== null ? customTextHi : dataObj.hindi;
+            // 1. Select correct element
+            const selector = type === 'fir' ? "#fir-generated-content" : "#app-generated-content";
+            const element = document.querySelector(selector);
             
-            const textContent = (currentLang === 'hindi') ? textHi : textEn;
+            // 2. Ensure content exists BEFORE generating PDF
+            if (!element || element.innerText.trim() === "") {
+                alert("No content to export!");
+                return;
+            }
+            
+            // 8. Debug check
+            console.log("PDF content:", element.innerText);
+            
+            // 6. Disable button until content loads
+            btn.disabled = true;
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = `<span class="material-symbols-outlined animate-spin">refresh</span> Generating...`;
 
-            // Generate safe HTML structure
-            const element = document.createElement('div');
-            element.style.cssText = "font-family: Arial, sans-serif; padding: 40px; color: #000; background: #fff;";
-            
-            // Critical bounds enforcement so html2canvas renders detatched nodes properly
-            element.style.position = 'absolute';
-            element.style.top = '-9999px';
-            element.style.left = '-9999px';
-            element.style.width = '800px'; 
-            document.body.appendChild(element);
-            
-            const title = type === 'fir' ? "Official Incident Report (FIR)" : "Formal Police Application";
-            
-            element.innerHTML = `
-                <h1 style="color: #c62828; font-size: 22px; text-align: center; margin-bottom: 6px;">${title}</h1>
-                <p style="text-align: center; font-size: 11px; color: #666; margin-bottom: 20px;">Generated securely via Sankat Sahayak System</p>
-                <hr style="border: none; border-top: 1px solid #ccc; margin-bottom: 20px;"/>
-                <pre id="pdf-safe-content" style="white-space: pre-wrap; word-wrap: break-word; font-family: inherit; font-size: 13px; line-height: 1.75;"></pre>
-                <div style="margin-top: 40px; text-align: center; font-size: 10px; color: #999;">
-                    <p>Document Timestamp: ${new Date().toLocaleString()}</p>
-                    <p>Electronically Generated Document. Valid for preliminary reporting.</p>
-                </div>
-            `;
-            
-            // Safe assignment bypassing parsing execution entirely
-            element.querySelector('#pdf-safe-content').textContent = textContent;
-
+            // Configuration for html2pdf
             const opt = {
               margin:       0.5,
               filename:     `${type}-draft-${Date.now()}.pdf`,
@@ -1821,17 +1806,24 @@
               jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
             };
 
-            if(window.html2pdf) {
-                html2pdf().set(opt).from(element).save().then(() => {
-                    document.body.removeChild(element);
-                }).catch(e => {
-                    console.error("PDF generation engine failed", e);
-                    document.body.removeChild(element);
-                });
-            } else {
-                alert("PDF generation component is loading. Please try again.");
-                document.body.removeChild(element);
-            }
+            // 3. Add delay before PDF generation
+            setTimeout(() => {
+                if(window.html2pdf) {
+                    // 4. Use html2pdf properly
+                    html2pdf().set(opt).from(element).save().then(() => {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                    }).catch(e => {
+                        console.error("PDF generation engine failed", e);
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                    });
+                } else {
+                    alert("PDF generation component is loading. Please try again.");
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
+            }, 300);
         }
 
     </script>
