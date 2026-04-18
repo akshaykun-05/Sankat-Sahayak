@@ -1751,14 +1751,14 @@
                     textEl.innerText = "⏳ Waking server… please wait";
                 }, 8000);
 
-                const firPromise = fetch("http://localhost:3000/generate-fir", {
+                const firPromise = fetch("https://sankat-sahayak-backend.onrender.com/generate-fir", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ description, image: safeImage, mode: "fir" }),
                     signal: controller.signal
                 });
 
-                const appPromise = fetch("http://localhost:3000/generate-fir", {
+                const appPromise = fetch("https://sankat-sahayak-backend.onrender.com/generate-fir", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ description, image: safeImage, mode: "application" }),
