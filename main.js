@@ -7,6 +7,8 @@ const cors = require("cors");
 const Groq = require("groq-sdk");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const Tesseract = require("tesseract.js");
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 // ── Config ──────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
@@ -33,6 +35,27 @@ if (GEMINI_API_KEY) {
   }
 } else {
   console.warn("[SERVER] GEMINI_API_KEY not set – image analysis disabled.");
+}
+
+// ── AWS S3 Client (optional – used for evidence evidence_url hook) ───────────
+let s3Client = null;
+const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME;
+
+if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && process.env.AWS_REGION && S3_BUCKET_NAME) {
+  try {
+    s3Client = new S3Client({
+      region: process.env.AWS_REGION,
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      },
+    });
+    console.log("[SERVER] AWS S3 client initialised (media storage enabled).");
+  } catch (e) {
+    console.warn("[SERVER] S3 init failed – upload will be skipped.", e.message);
+  }
+} else {
+  console.warn("[SERVER] AWS credentials or bucket not set – S3 uploads disabled.");
 }
 
 // ── Express app ──────────────────────────────────────────────────────────────
@@ -298,6 +321,33 @@ OUTPUT RULES:
 
     const selectedPrompt = mode === "application" ? APPLICATION_PROMPT : SYSTEM_PROMPT;
 
+    let finalDescription = description.trim();
+    let s3Url = null;
+
+    // ── S3 Image Extraction / Upload (Optional) ──────────────────────────────
+    if (image && s3Client && S3_BUCKET_NAME) {
+      try {
+        console.log("[POST /generate-fir] Uploading image/frame to S3...");
+        const base64Data = image.includes(",") ? image.split(",")[1] : image;
+        const buffer = Buffer.from(base64Data, "base64");
+        const filename = `evidence_${Date.now()}_${Math.random().toString(36).substring(2, 9)}.jpg`;
+
+        const command = new PutObjectCommand({
+          Bucket: S3_BUCKET_NAME,
+          Key: filename,
+          Body: buffer,
+          ContentType: "image/jpeg",
+          ACL: "public-read"
+        });
+
+        await s3Client.send(command);
+        s3Url = `https://${S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${filename}`;
+        console.log("[POST /generate-fir] S3 Upload successful:", s3Url);
+      } catch (err) {
+        console.error("[POST /generate-fir] S3 upload failed:", err.message);
+      }
+    }
+
     // ── Gemini image analysis (optional) ─────────────────────────────────────
     let finalDescription = description.trim();
 
@@ -341,15 +391,20 @@ OUTPUT RULES:
         // Match Indian vehicle number format: e.g. MH12AB1234
         const match = ocrText.match(/[A-Z]{2}[0-9]{2}[A-Z]{2}[0-9]{4}/);
         if (match) {
-          finalDescription += "\nVehicle Number Detected: " + match[0];
+          finalDescription += "\n\nVehicle Number: " + match[0];
           console.log("[POST /generate-fir] OCR vehicle number found:", match[0]);
         } else {
           console.log("[POST /generate-fir] OCR ran but no vehicle number matched.");
         }
       } catch (ocrErr) {
         // Non-fatal – Groq still runs
-        console.error("[POST /generate-fir] OCR failed, continuing without vehicle number:", ocrErr.message);
+        console.error("[POST /generate-fir] OCR failed:", ocrErr.message);
       }
+    }
+
+    // Final merge of S3 to description
+    if (s3Url) {
+      finalDescription += "\n\nEvidence Link: " + s3Url;
     }
 
     // ── Call Groq ────────────────────────────────────────────────────────────
@@ -403,6 +458,7 @@ OUTPUT RULES:
     return res.json({
       fir_english: cleanFIRText(stripAfterNote(englishPart)),
       fir_hindi:   cleanFIRText(stripAfterNote(hindiPart)) || "Hindi version not available",
+      evidence_url: s3Url
     });
   } catch (err) {
     console.error("[POST /generate-fir] Unexpected error:", err.message);
