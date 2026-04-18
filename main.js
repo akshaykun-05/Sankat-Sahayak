@@ -182,6 +182,57 @@ function cleanFIRText(text) {
     .replace(/\[.*?\]/g, "") // remove placeholders like [To be filled]
     .trim();
 }
+
+//---------------------------------------------------
+// stripAfterNote: hard-truncate anything that appears after the NOTE section.
+// Works for both English (NOTE:) and Hindi (नोट:) blocks.
+function stripAfterNote(text) {
+  if (typeof text !== "string") return String(text);
+
+  // Match the NOTE heading in English or Hindi
+  const noteMatch = text.match(/(?:^|\n)(NOTE\s*:|\u0928\u094b\u091f\s*:)/i);
+  if (!noteMatch || noteMatch.index === undefined) return text.trim();
+
+  // Position of the NOTE heading
+  const noteStart = noteMatch.index;
+  const beforeNote = text.substring(0, noteStart);
+  const fromNote   = text.substring(noteStart);
+
+  // Walk line by line: keep the heading + its bullet lines, stop at the first
+  // non-bullet, non-empty line that appears AFTER at least one bullet.
+  const lines    = fromNote.split(/\r?\n/);
+  const kept     = [];
+  let bulletSeen = false;
+
+  for (const line of lines) {
+    const isBullet = /^\s*\u2022/.test(line);   // starts with •
+    const isEmpty  = line.trim() === "";
+
+    if (kept.length === 0) {
+      // Always keep the NOTE: heading line
+      kept.push(line);
+      continue;
+    }
+
+    if (isBullet) {
+      bulletSeen = true;
+      kept.push(line);
+      continue;
+    }
+
+    if (bulletSeen) {
+      // First non-bullet line after NOTE bullets → stop
+      break;
+    }
+
+    // Empty or header lines before any bullet (shouldn't normally appear, keep anyway)
+    if (isEmpty) {
+      kept.push(line);
+    }
+  }
+
+  return (beforeNote + kept.join("\n")).trim();
+}
 // ── POST /generate-fir ───────────────────────────────────────────────────────
 //
 // Sample curl command to test this endpoint:
@@ -309,8 +360,8 @@ app.post("/generate-fir", async (req, res) => {
 
     console.log("[POST /generate-fir] FIR generated successfully.");
     return res.json({
-      fir_english: cleanFIRText(englishPart),
-      fir_hindi:   cleanFIRText(hindiPart) || "Hindi version not available",
+      fir_english: cleanFIRText(stripAfterNote(englishPart)),
+      fir_hindi:   cleanFIRText(stripAfterNote(hindiPart)) || "Hindi version not available",
     });
   } catch (err) {
     console.error("[POST /generate-fir] Unexpected error:", err.message);
