@@ -21,9 +21,28 @@
             position: relative;
             z-index: 10;
         }
+
+        .input-container {
+            position: relative;
+            padding-bottom: 60px;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding-bottom: 60px;
+        }
         
         /* Ensure the main textarea remains interactive */
-        #main-textarea {
+        #incidentInput {
             pointer-events: auto !important;
             position: relative;
             z-index: 20;
@@ -422,14 +441,13 @@
                     </div>
                 </div>
 
-                <div
-                    class="relative bg-white/70 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl border border-black/5 dark:border-white/10 shadow-inner overflow-hidden transition-all focus-within:ring-2 focus-within:ring-primary/20 dark:focus-within:bg-slate-800">
-                    <textarea id="main-textarea" data-lang-key="journal_ph"
-                        class="w-full bg-transparent border-none p-6 pb-20 font-body text-[15px] leading-relaxed text-on-surface dark:text-slate-200 placeholder:text-on-surface-variant/40 dark:placeholder:text-slate-500 focus:ring-0 min-h-[180px] resize-none"
+                <div class="input-container relative bg-white/70 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl border border-black/5 dark:border-white/10 shadow-inner overflow-hidden transition-all focus-within:ring-2 focus-within:ring-primary/20 dark:focus-within:bg-slate-800">
+                    <textarea id="incidentInput" data-lang-key="journal_ph"
+                        class="w-full bg-transparent border-none p-6 pb-20 font-body text-[15px] leading-relaxed text-on-surface dark:text-slate-200 placeholder:text-on-surface-variant/40 dark:placeholder:text-slate-500 focus:ring-0 min-h-[150px] resize-none"
                         placeholder="Describe the sequence of events clearly (e.g., at 10:30 AM, a collision occurred near...)"></textarea>
 
-                    <!-- Action Dock -->
-                    <div class="absolute bottom-4 left-4 right-4 flex items-center justify-between pointer-events-none">
+                    <!-- Action Dock & Controls -->
+                    <div class="controls pointer-events-none">
 
                         <div class="flex gap-2 pointer-events-auto">
                             <button onclick="openModal('camera-modal')"
@@ -1153,7 +1171,7 @@
             recognition.continuous = true;
             recognition.interimResults = true;
 
-            const textarea = document.getElementById('main-textarea');
+            const textarea = document.getElementById('incidentInput');
             const micIcon = document.getElementById('mic-icon');
             let finalTranscript = textarea.value;
 
@@ -1281,7 +1299,7 @@
                     }
                     if (uploadText) uploadText.innerText = 'Media Added';
 
-                    const textAreaEl = document.getElementById('main-textarea');
+                    const textAreaEl = document.getElementById('incidentInput');
                     if (!textAreaEl.value.includes("[Photo Attached: evidence.jpg]")) {
                         const prefix = textAreaEl.value.trim() === "" ? "" : "\n\n";
                         textAreaEl.value += prefix + "[Photo Attached: evidence.jpg]";
@@ -1536,8 +1554,9 @@
                 renderInlineFIR('${type}');
             `;
 
-            // Safe pre element generation
-            const preElementId = isFIR ? "fir-generated-content" : "app-generated-content";
+            // Safe pre element generation according to exact user spec
+            const preElementId = isFIR ? "firText" : "appText";
+            const containerId = isFIR ? "outputContainer" : "applicationContainer";
 
             homeResult.innerHTML = `
                 <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-[2.5rem] p-8 md:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white/40 dark:border-white/10 relative overflow-hidden group">
@@ -1573,8 +1592,8 @@
                     <!-- FIR Content DOCUMENT BOX -->
                     <div class="relative group/doc mb-10">
                         <div class="absolute -inset-1 blur-sm bg-gradient-to-br from-black/5 to-transparent dark:from-white/5 opacity-0 group-hover/doc:opacity-100 transition-opacity"></div>
-                        <div id="${preElementId}_container" class="fir-document relative p-6 md:p-10 rounded-[1.5rem] border border-black/5 dark:border-white/10 shadow-inner overflow-hidden min-h-[300px]">
-                            <!-- Pre element will be safely appended here -->
+                        <div id="${containerId}" class="fir-document relative p-6 md:p-10 rounded-[1.5rem] border border-black/5 dark:border-white/10 shadow-inner overflow-hidden min-h-[300px]">
+                            <pre id="${preElementId}" class="whitespace-pre-wrap text-[14px] md:text-[15px] font-medium leading-[1.8] text-slate-800 dark:text-slate-200 max-h-[60vh] overflow-y-auto custom-scrollbar relative z-10 p-4 rounded shadow bg-white/50"></pre>
                         </div>
                     </div>
 
@@ -1594,15 +1613,8 @@
                 </div>
             `;
 
-            // SAFE METHOD: append properly using textContent
-            const pre = document.createElement("pre");
-            pre.id = preElementId;
-            pre.className = "whitespace-pre-wrap text-[14px] md:text-[15px] font-medium leading-[1.8] text-slate-800 dark:text-slate-200 max-h-[60vh] overflow-y-auto custom-scrollbar relative z-10 p-4 rounded shadow bg-white/50";
-            pre.textContent = sanitize(content);
-
-            const container = document.getElementById(`${preElementId}_container`);
-            container.innerHTML = "";
-            container.appendChild(pre);
+            // 3. RENDER TEXT SAFELY directly to the pre node inside the container
+            document.getElementById(preElementId).textContent = sanitize(content);
 
             // Scroll to the result (but only logic for the top one if both)
             if (isFIR) homeResult.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1616,7 +1628,7 @@
             const btn = document.getElementById('generate-fir-btn');
             const icon = document.getElementById('generate-icon');
             const textEl = document.getElementById('generate-text');
-            const textArea = document.getElementById('main-textarea');
+            const textArea = document.getElementById('incidentInput');
             const description = textArea.value.trim();
 
             if (!description) {
@@ -1776,16 +1788,16 @@
             document.getElementById(previewId).textContent = sanitize(previewText);
         }
 
-        function downloadFIRAsPDF(event, type) {
+        async function downloadFIRAsPDF(event, type) {
             const btn = event.currentTarget;
             
-            // 1. Select correct element
-            const selector = type === 'fir' ? "#fir-generated-content" : "#app-generated-content";
-            const element = document.querySelector(selector);
+            // 1. Select correct element container exactly as specified
+            const selector = type === 'fir' ? "outputContainer" : "applicationContainer";
+            const element = document.getElementById(selector);
             
             // 2. Ensure content exists BEFORE generating PDF
-            if (!element || element.innerText.trim() === "") {
-                alert("No content to export!");
+            if (!element || !element.innerText.trim()) {
+                alert("Content not ready yet!");
                 return;
             }
             
@@ -1797,33 +1809,31 @@
             const originalHtml = btn.innerHTML;
             btn.innerHTML = `<span class="material-symbols-outlined animate-spin">refresh</span> Generating...`;
 
-            // Configuration for html2pdf
-            const opt = {
-              margin:       0.5,
-              filename:     `${type}-draft-${Date.now()}.pdf`,
-              image:        { type: 'jpeg', quality: 0.98 },
-              html2canvas:  { scale: 2 },
-              jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-            };
+            try {
+                // 5. FORCE RENDER BEFORE PDF delay logic
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // 9. Do not use iframe print hacks, use HTML2PDF layout properly.
+                const opt = {
+                    margin: 10,
+                    filename: type === 'fir' ? "FIR_Report.pdf" : "Application_Letter.pdf",
+                    html2canvas: { scale: 2 },
+                    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+                };
 
-            // 3. Add delay before PDF generation
-            setTimeout(() => {
                 if(window.html2pdf) {
-                    // 4. Use html2pdf properly
-                    html2pdf().set(opt).from(element).save().then(() => {
-                        btn.disabled = false;
-                        btn.innerHTML = originalHtml;
-                    }).catch(e => {
-                        console.error("PDF generation engine failed", e);
-                        btn.disabled = false;
-                        btn.innerHTML = originalHtml;
-                    });
+                    // 6. Use html2pdf PROPERLY and capture cleanly
+                    await html2pdf().set(opt).from(element).save();
                 } else {
                     alert("PDF generation component is loading. Please try again.");
-                    btn.disabled = false;
-                    btn.innerHTML = originalHtml;
                 }
-            }, 300);
+            } catch (err) {
+                console.error("PDF generation engine failed", err);
+            } finally {
+                // 8. Restore UI interactability reliably 
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
         }
 
     </script>
