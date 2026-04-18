@@ -451,6 +451,8 @@
 
         <!-- Instant FIR Result Placeholder -->
         <div id="home-fir-result" class="hidden mt-8 space-y-6 slide-in-top"></div>
+        <!-- Instant Application Result Placeholder -->
+        <div id="home-app-result" class="hidden mt-8 space-y-6 slide-in-top"></div>
     </main>
 
     <main id="view-explore"
@@ -1458,39 +1460,66 @@
         // ── Generate FIR ──────────────────────────────────────────────────────────
         let firData = { english: "", hindi: "" };
         let currentFIRLang = "english";
+        let appData = { english: "", hindi: "" };
+        let currentAppLang = "english";
 
-        function copyFIRToClipboard() {
-            const content = currentFIRLang === "english" ? firData.english : firData.hindi;
+        function copyFIRToClipboard(type = 'fir') {
+            const dataObj = type === 'fir' ? firData : appData;
+            const currentLang = type === 'fir' ? currentFIRLang : currentAppLang;
+            const content = currentLang === "english" ? dataObj.english : dataObj.hindi;
             navigator.clipboard.writeText(content).then(() => {
-                const copyBtn = document.getElementById('copy-fir-btn');
+                const btnId = type === 'fir' ? 'copy-fir-btn' : 'copy-app-btn';
+                const copyBtn = document.getElementById(btnId);
                 const originalHTML = copyBtn.innerHTML;
                 copyBtn.innerHTML = `<span class="material-symbols-outlined text-[18px]">done</span> Copied!`;
                 setTimeout(() => copyBtn.innerHTML = originalHTML, 2000);
             });
         }
 
-        function viewFullFIR(textEn, textHi) {
-            firData.english = textEn;
-            firData.hindi = textHi;
+        function viewFullFIR(textEn, textHi, type = 'fir') {
+            const targetData = type === 'fir' ? firData : appData;
+            targetData.english = textEn;
+            targetData.hindi = textHi;
             // Default FIR specific view to site language preference
-            currentFIRLang = localStorage.getItem('preferredLanguage') === 'hi' ? 'hindi' : 'english';
+            const preferred = localStorage.getItem('preferredLanguage') === 'hi' ? 'hindi' : 'english';
+            if (type === 'fir') currentFIRLang = preferred;
+            else currentAppLang = preferred;
+            
             switchView('view-home');
-            renderInlineFIR();
+            renderInlineFIR(type);
         }
 
-        function renderInlineFIR() {
+        function renderInlineFIR(type = 'fir') {
             const currentLang = localStorage.getItem('preferredLanguage') || 'en';
-            const content = currentFIRLang === "english" ? firData.english : firData.hindi;
+            
+            const isFIR = type === 'fir';
+            const currentViewLang = isFIR ? currentFIRLang : currentAppLang;
+            const dataObj = isFIR ? firData : appData;
+            const content = currentViewLang === "english" ? dataObj.english : dataObj.hindi;
 
             // Translations for internal toggle labels
             const langNameEn = currentLang === 'hi' ? 'अंग्रेजी' : 'English';
             const langNameHi = currentLang === 'hi' ? 'हिंदी' : 'Hindi';
 
-            const langLabel = currentFIRLang === "english" ? langNameEn : langNameHi;
-            const btnLabel = currentFIRLang === "english" ? (translations[currentLang].switch_to + " " + langNameHi) : (translations[currentLang].switch_to + " " + langNameEn);
+            const langLabel = currentViewLang === "english" ? langNameEn : langNameHi;
+            const btnLabel = currentViewLang === "english" ? (translations[currentLang].switch_to + " " + langNameHi) : (translations[currentLang].switch_to + " " + langNameEn);
 
-            const homeResult = document.getElementById('home-fir-result');
+            const resultContainerId = isFIR ? 'home-fir-result' : 'home-app-result';
+            const homeResult = document.getElementById(resultContainerId);
             homeResult.classList.remove('hidden');
+            
+            const titleTranslation = translations[currentLang].fir_generated_title || "Generated Document";
+            const displayTitle = isFIR ? titleTranslation : "Generated Application";
+            
+            const nextLangToggle = `
+                if('${type}'==='fir') {
+                    currentFIRLang = currentFIRLang === 'english' ? 'hindi' : 'english';
+                } else {
+                    currentAppLang = currentAppLang === 'english' ? 'hindi' : 'english';
+                }
+                renderInlineFIR('${type}');
+            `;
+
             homeResult.innerHTML = `
                 <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-[2.5rem] p-8 md:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white/40 dark:border-white/10 relative overflow-hidden group">
                     <!-- Watermark -->
@@ -1503,7 +1532,7 @@
                             </div>
                             <div>
                                 <h4 class="font-headline font-black text-2xl text-on-surface dark:text-white tracking-tight leading-none mb-1">
-                                    <span data-lang-key="fir_generated_title">${translations[currentLang].fir_generated_title}</span>
+                                    <span>${displayTitle}</span>
                                 </h4>
                                 <p class="text-[11px] font-bold text-green-600/70 dark:text-green-400/80 tracking-[0.2em] uppercase">${langLabel} • OFFICIAL DRAFT</p>
                             </div>
@@ -1511,11 +1540,11 @@
                         
                         <div class="flex items-center gap-2">
                              <!-- Language Switch inside doc -->
-                            <button onclick="currentFIRLang = currentFIRLang === 'english' ? 'hindi' : 'english'; renderInlineFIR();"
+                            <button onclick="${nextLangToggle.replace(/\n\s+/g,' ')}"
                                 class="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary border-2 border-primary/20 bg-primary/5 hover:bg-primary/10 px-5 py-2.5 rounded-full transition-all active:scale-95">
                                 <span class="material-symbols-outlined text-[16px]">translate</span> ${btnLabel}
                             </button>
-                            <button onclick="this.closest('#home-fir-result').classList.add('hidden')"
+                            <button onclick="this.closest('#${resultContainerId}').classList.add('hidden')"
                                 class="w-10 h-10 rounded-full bg-black/5 dark:bg-white/10 flex justify-center items-center text-on-surface dark:text-white hover:bg-black/10 dark:hover:bg-white/20 transition-colors">
                                 <span class="material-symbols-outlined text-[20px]">close</span>
                             </button>
@@ -1532,12 +1561,12 @@
 
                     <!-- Actions Dock -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
-                        <button onclick="downloadFIRAsPDF(event, \`${(currentFIRLang === 'hindi' ? firData.hindi : firData.english).replace(/`/g, '\\`')}\`)"
+                        <button onclick="downloadFIRAsPDF(event, \`${(currentViewLang === 'hindi' ? dataObj.hindi : dataObj.english).replace(/`/g, '\\`')}\`)"
                             class="group bg-on-surface dark:bg-white text-white dark:text-slate-900 h-16 rounded-2xl font-headline font-black uppercase tracking-widest text-[13px] active:scale-95 transition-all flex justify-center items-center gap-3 shadow-xl hover:brightness-110">
                             <span class="material-symbols-outlined text-[22px] group-hover:animate-bounce">picture_as_pdf</span> 
-                            <span data-lang-key="download_pdf">${translations[currentLang].download_pdf}</span>
+                            <span>Download PDF</span>
                         </button>
-                        <button id="copy-fir-btn" onclick="copyFIRToClipboard()"
+                        <button id="copy-${type}-btn" onclick="copyFIRToClipboard('${type}')"
                             class="bg-white/50 dark:bg-slate-800/50 border border-black/5 dark:border-white/10 text-on-surface dark:text-white h-16 rounded-2xl font-headline font-black uppercase tracking-widest text-[13px] active:scale-95 transition-all flex justify-center items-center gap-3 hover:bg-white dark:hover:bg-slate-700 shadow-sm">
                             <span class="material-symbols-outlined text-[22px]">content_copy</span> Copy to Clipboard
                         </button>
@@ -1545,8 +1574,8 @@
                 </div>
             `;
 
-            // Scroll to the result
-            homeResult.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Scroll to the result (but only logic for the top one if both)
+            if (isFIR) homeResult.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
         function escapeHtml(str) {
@@ -1596,35 +1625,51 @@
                     textEl.innerText = "⏳ Waking server… please wait";
                 }, 8000);
 
-                const response = await fetch("https://sankat-sahayak-backend.onrender.com/generate-fir", {
+                const firPromise = fetch("https://sankat-sahayak-backend.onrender.com/generate-fir", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ description, image: safeImage }),
+                    body: JSON.stringify({ description, image: safeImage, mode: "fir" }),
                     signal: controller.signal
                 });
 
+                const appPromise = fetch("https://sankat-sahayak-backend.onrender.com/generate-fir", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ description, image: safeImage, mode: "application" }),
+                    signal: controller.signal
+                });
+
+                const [resFir, resApp] = await Promise.all([firPromise, appPromise]);
                 clearTimeout(timeoutId);
                 clearTimeout(hintTimer);
 
-                console.log("Status:", response.status);
+                console.log("Status FIR:", resFir.status, "Status App:", resApp.status);
 
-                if (!response.ok) {
-                    throw new Error("Server responded with " + response.status);
+                if (!resFir.ok || !resApp.ok) {
+                    throw new Error("Server responded with error: " + (!resFir.ok ? resFir.status : resApp.status));
                 }
 
-                const data = await response.json();
-                console.log("Response:", data);
+                const dataFir = await resFir.json();
+                const dataApp = await resApp.json();
+                console.log("Response FIR:", dataFir);
+                console.log("Response APP:", dataApp);
 
-                // Store both language versions; default to English
-                firData.english = data.fir_english || "";
-                firData.hindi = data.fir_hindi || "Hindi version not available";
+                // Store both language versions
+                firData.english = dataFir.fir_english || "";
+                firData.hindi = dataFir.fir_hindi || "Hindi version not available";
                 currentFIRLang = "english";
 
+                appData.english = dataApp.fir_english || "";
+                appData.hindi = dataApp.fir_hindi || "Hindi version not available";
+                currentAppLang = "english";
+
                 // Render inline result with toggle
-                renderInlineFIR();
+                renderInlineFIR('fir');
+                renderInlineFIR('app');
 
                 // Push card silently to History archive
-                renderFIRCard(firData.english, firData.hindi);
+                renderFIRCard(firData.english, firData.hindi, 'fir');
+                renderFIRCard(appData.english, appData.hindi, 'app');
 
             } catch (err) {
                 console.error("REAL ERROR:", err);
@@ -1644,7 +1689,7 @@
             }
         }
 
-        function renderFIRCard(textEn, textHi) {
+        function renderFIRCard(textEn, textHi, type = 'fir') {
             const currentLang = localStorage.getItem('preferredLanguage') || 'en';
             const container = document.getElementById('draft-list-container');
             const emptyState = document.getElementById('draft-empty-state');
@@ -1659,6 +1704,7 @@
             const dateStr = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) + " • " + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             const previewText = textEn.replace(/\n/g, " ").substring(0, 100) + "...";
+            const draftTitle = type === 'fir' ? translations[currentLang].fir_draft_title : "Formal Application Draft";
 
             card.innerHTML = `
                 <div class="flex items-start justify-between mb-4">
@@ -1667,7 +1713,7 @@
                             <span class="material-symbols-outlined">description</span>
                         </div>
                         <div>
-                            <div class="font-headline font-bold text-on-surface dark:text-white leading-tight" data-lang-key="fir_draft_title">${translations[currentLang].fir_draft_title}</div>
+                            <div class="font-headline font-bold text-on-surface dark:text-white leading-tight">${draftTitle}</div>
                             <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">${dateStr}</div>
                         </div>
                     </div>
@@ -1677,26 +1723,26 @@
                   <p class="text-[13px] font-medium text-on-surface-variant dark:text-slate-300 line-clamp-3 leading-relaxed">${previewText}</p>
                 </div>
                 <div class="flex gap-2">
-                                <button onclick="viewFullFIR(\`${textEn.replace(/`/g, '\\`')}\`, \`${textHi.replace(/`/g, '\\`')}\`)"
+                                <button onclick="viewFullFIR(\`${textEn.replace(/`/g, '\\`')}\`, \`${textHi.replace(/`/g, '\\`')}\`, '${type}')"
                                     class="flex-1 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 active:scale-95 text-on-surface dark:text-white py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all flex justify-center items-center gap-2 border border-black/5 dark:border-white/5">
                                     <span class="material-symbols-outlined text-[18px]">visibility</span> <span data-lang-key="view_full">${translations[currentLang].view_full}</span> 
                                 </button>
-                                <button onclick="downloadFIRAsPDF(event, \`${textEn.replace(/`/g, '\\`')}\`, \`${textHi.replace(/`/g, '\\`')}\`)" class="w-12 h-12 flex border border-black/10 dark:border-white/10 justify-center items-center rounded-xl bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-all shadow-sm text-blue-600 dark:text-blue-400">
+                                <button onclick="downloadFIRAsPDF(event, \`${textEn.replace(/`/g, '\\`')}\`, \`${textHi.replace(/`/g, '\\`')}\`, '${type}')" class="w-12 h-12 flex border border-black/10 dark:border-white/10 justify-center items-center rounded-xl bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-all shadow-sm text-blue-600 dark:text-blue-400">
                                     <span class="material-symbols-outlined text-[20px]">picture_as_pdf</span>
                                 </button>
                             </div>
             `;
 
-
             // Insert at top inside list container
             container.insertBefore(card, container.firstChild);
         }
 
-        function downloadFIRAsPDF(event, textEn, textHi) {
+        function downloadFIRAsPDF(event, textEn, textHi, type = 'fir') {
             const btn = event.currentTarget;
+            let currentLang = type === 'fir' ? currentFIRLang : currentAppLang;
 
-            // Pick the correct language: if textHi is provided, respect currentFIRLang
-            const textContent = (textHi && currentFIRLang === 'hindi') ? textHi : textEn;
+            // Pick the correct language: if textHi is provided, respect currentLang
+            const textContent = (textHi && currentLang === 'hindi') ? textHi : textEn;
 
             // Escape HTML special chars so FIR text renders as plain text inside the iframe
             const safe = textContent
