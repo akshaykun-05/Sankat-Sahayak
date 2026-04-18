@@ -13,7 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <style>
         /* Safe UI Unblocking for Output Sections */
@@ -1600,10 +1600,10 @@
                     <!-- Actions Dock -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
                         <!-- Safe PDF Download -->
-                        <button onclick="downloadFIRAsPDF(event, '${type}')"
+                        <button onclick="${isFIR ? 'downloadFIR()' : 'downloadApplication()'}"
                             class="group bg-on-surface dark:bg-white text-white dark:text-slate-900 h-16 rounded-2xl font-headline font-black uppercase tracking-widest text-[13px] active:scale-95 transition-all flex justify-center items-center gap-3 shadow-xl hover:brightness-110">
                             <span class="material-symbols-outlined text-[22px] group-hover:animate-bounce">picture_as_pdf</span> 
-                            <span>Download PDF</span>
+                            <span>${isFIR ? 'Download FIR PDF' : 'Download Application PDF'}</span>
                         </button>
                         <button id="copy-${type}-btn" onclick="copyFIRToClipboard('${type}')"
                             class="bg-white/50 dark:bg-slate-800/50 border border-black/5 dark:border-white/10 text-on-surface dark:text-white h-16 rounded-2xl font-headline font-black uppercase tracking-widest text-[13px] active:scale-95 transition-all flex justify-center items-center gap-3 hover:bg-white dark:hover:bg-slate-700 shadow-sm">
@@ -1775,7 +1775,7 @@
                                     <span class="material-symbols-outlined text-[18px]">visibility</span> <span data-lang-key="view_full">${translations[currentLang].view_full}</span> 
                                 </button>
                                 <!-- PDF Download -->
-                                <button onclick="downloadFIRAsPDF(event, '${type}', decodeURIComponent('${encodeURIComponent(textEn)}'), decodeURIComponent('${encodeURIComponent(textHi)}'))" class="w-12 h-12 flex border border-black/10 dark:border-white/10 justify-center items-center rounded-xl bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-all shadow-sm text-blue-600 dark:text-blue-400">
+                                <button onclick="${type === 'fir' ? `downloadFIR(decodeURIComponent('${encodeURIComponent(textEn)}'), decodeURIComponent('${encodeURIComponent(textHi)}'))` : `downloadApplication(decodeURIComponent('${encodeURIComponent(textEn)}'), decodeURIComponent('${encodeURIComponent(textHi)}'))`}" class="w-12 h-12 flex border border-black/10 dark:border-white/10 justify-center items-center rounded-xl bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-all shadow-sm text-blue-600 dark:text-blue-400">
                                     <span class="material-symbols-outlined text-[20px]">picture_as_pdf</span>
                                 </button>
                             </div>
@@ -1788,52 +1788,44 @@
             document.getElementById(previewId).textContent = sanitize(previewText);
         }
 
-        async function downloadFIRAsPDF(event, type) {
-            const btn = event.currentTarget;
-            
-            // 1. Select correct element container exactly as specified
-            const selector = type === 'fir' ? "outputContainer" : "applicationContainer";
-            const element = document.getElementById(selector);
-            
-            // 2. Ensure content exists BEFORE generating PDF
-            if (!element || !element.innerText.trim()) {
-                alert("Content not ready yet!");
+        function downloadFIR(customTextEn = null, customTextHi = null) {
+            let currentLang = currentFIRLang;
+            let textEn = customTextEn !== null ? customTextEn : document.getElementById("firText")?.textContent;
+            let textHi = customTextHi !== null ? customTextHi : document.getElementById("firText")?.textContent;
+            let text = (currentLang === 'hindi') ? textHi : textEn;
+
+            if (!text || !text.trim()) {
+                alert("No FIR content available!");
                 return;
             }
-            
-            // 8. Debug check
-            console.log("PDF content:", element.innerText);
-            
-            // 6. Disable button until content loads
-            btn.disabled = true;
-            const originalHtml = btn.innerHTML;
-            btn.innerHTML = `<span class="material-symbols-outlined animate-spin">refresh</span> Generating...`;
 
-            try {
-                // 5. FORCE RENDER BEFORE PDF delay logic
-                await new Promise(resolve => setTimeout(resolve, 500));
-                
-                // 9. Do not use iframe print hacks, use HTML2PDF layout properly.
-                const opt = {
-                    margin: 10,
-                    filename: type === 'fir' ? "FIR_Report.pdf" : "Application_Letter.pdf",
-                    html2canvas: { scale: 2 },
-                    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-                };
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
 
-                if(window.html2pdf) {
-                    // 6. Use html2pdf PROPERLY and capture cleanly
-                    await html2pdf().set(opt).from(element).save();
-                } else {
-                    alert("PDF generation component is loading. Please try again.");
-                }
-            } catch (err) {
-                console.error("PDF generation engine failed", err);
-            } finally {
-                // 8. Restore UI interactability reliably 
-                btn.disabled = false;
-                btn.innerHTML = originalHtml;
+            const lines = doc.splitTextToSize(text.trim(), 180);
+
+            doc.text(lines, 10, 10);
+            doc.save("FIR_Report.pdf");
+        }
+
+        function downloadApplication(customTextEn = null, customTextHi = null) {
+            let currentLang = currentAppLang;
+            let textEn = customTextEn !== null ? customTextEn : document.getElementById("appText")?.textContent;
+            let textHi = customTextHi !== null ? customTextHi : document.getElementById("appText")?.textContent;
+            let text = (currentLang === 'hindi') ? textHi : textEn;
+
+            if (!text || !text.trim()) {
+                alert("No Application content available!");
+                return;
             }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const lines = doc.splitTextToSize(text.trim(), 180);
+
+            doc.text(lines, 10, 10);
+            doc.save("Application_Report.pdf");
         }
 
     </script>
